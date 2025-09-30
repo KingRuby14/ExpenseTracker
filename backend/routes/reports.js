@@ -1,3 +1,4 @@
+// routes/reports.js
 const express = require('express');
 const mongoose = require('mongoose');
 const router = express.Router();
@@ -6,15 +7,22 @@ const Expense = require('../models/Expense');
 const Income = require('../models/Income');
 const { parse } = require('json2csv');
 
+// ----- utilities -----
+function toISO(dateStr) {
+  try { return new Date(dateStr); } catch(e) { return null; }
+}
+
 // category aggregation for expenses
 router.get('/expenses-by-category', auth, async (req, res) => {
   try {
+    // create ObjectId once (use new to avoid "cannot invoke without 'new'")
+    const userId = new mongoose.Types.ObjectId(req.userId);
+
     const results = await Expense.aggregate([
-      { $match: { user: mongoose.Types.ObjectId(req.userId) } },
+      { $match: { user: userId } },
       { $group: { _id: '$category', total: { $sum: '$amount' } } },
       { $sort: { total: -1 } }
     ]);
-    // transform to { name, total }
     res.json(results.map(r => ({ category: r._id, total: r.total })));
   } catch (err) {
     console.error(err);
@@ -25,8 +33,10 @@ router.get('/expenses-by-category', auth, async (req, res) => {
 // monthly timeline for expenses (year-month)
 router.get('/expenses-timeline', auth, async (req, res) => {
   try {
+    const userId = new mongoose.Types.ObjectId(req.userId);
+
     const timeline = await Expense.aggregate([
-      { $match: { user: mongoose.Types.ObjectId(req.userId) } },
+      { $match: { user: userId } },
       { $group: {
         _id: { year: { $year: '$date' }, month: { $month: '$date' } },
         total: { $sum: '$amount' }
@@ -44,7 +54,8 @@ router.get('/expenses-timeline', auth, async (req, res) => {
 // dashboard summary (totals)
 router.get('/dashboard', auth, async (req, res) => {
   try {
-    const userId = mongoose.Types.ObjectId(req.userId);
+    const userId = new mongoose.Types.ObjectId(req.userId);
+
     const [expenseTotalAggregate] = await Expense.aggregate([
       { $match: { user: userId } },
       { $group: { _id: null, total: { $sum: '$amount' } } }
@@ -68,11 +79,13 @@ router.get('/dashboard', auth, async (req, res) => {
 router.get('/download/expenses', auth, async (req, res) => {
   try {
     const { start, end } = req.query;
-    const filter = { user: mongoose.Types.ObjectId(req.userId) };
+    const userId = new mongoose.Types.ObjectId(req.userId);
+    const filter = { user: userId };
+
     if (start || end) {
       filter.date = {};
-      if (start) filter.date.$gte = new Date(start);
-      if (end) filter.date.$lte = new Date(end);
+      if (start) filter.date.$gte = toISO(start);
+      if (end) filter.date.$lte = toISO(end);
     }
     const rows = await Expense.find(filter).sort({ date: -1 });
     const data = rows.map(r => ({
@@ -96,11 +109,13 @@ router.get('/download/expenses', auth, async (req, res) => {
 router.get('/download/incomes', auth, async (req, res) => {
   try {
     const { start, end } = req.query;
-    const filter = { user: mongoose.Types.ObjectId(req.userId) };
+    const userId = new mongoose.Types.ObjectId(req.userId);
+    const filter = { user: userId };
+
     if (start || end) {
       filter.date = {};
-      if (start) filter.date.$gte = new Date(start);
-      if (end) filter.date.$lte = new Date(end);
+      if (start) filter.date.$gte = toISO(start);
+      if (end) filter.date.$lte = toISO(end);
     }
     const rows = await Income.find(filter).sort({ date: -1 });
     const data = rows.map(r => ({
