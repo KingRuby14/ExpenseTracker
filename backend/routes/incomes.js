@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const mongoose = require('mongoose'); // <-- Make sure this is here
+const mongoose = require('mongoose'); 
 const auth = require('../middleware/auth');
 const Income = require('../models/Income');
 
