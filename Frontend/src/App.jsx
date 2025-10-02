@@ -3,7 +3,6 @@ import Auth from "./Pages/Auth";
 import Dashboard from "./Pages/Dashboard";
 import Expenses from "./Pages/Expenses";
 import Incomes from "./Pages/Incomes";
-import Reports from "./Pages/Reports";
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem("token");
@@ -23,7 +22,6 @@ export default function App() {
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/expenses" element={<Expenses />} />
                 <Route path="/incomes" element={<Incomes />} />
-                <Route path="/reports" element={<Reports />} />
               </Routes>
             </PrivateRoute>
           }

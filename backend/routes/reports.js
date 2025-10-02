@@ -1,4 +1,3 @@
-// routes/reports.js
 const express = require("express");
 const mongoose = require("mongoose");
 const router = express.Router();
@@ -35,7 +34,7 @@ router.get("/expenses-by-category", auth, async (req, res) => {
 });
 
 // ----- Monthly timeline for expenses -----
-router.get("/expenses-timeline", auth, async (req, res) => {
+router.get("/timeline", auth, async (req, res) => {
   try {
     const userId = new mongoose.Types.ObjectId(req.userId);
 
@@ -66,7 +65,7 @@ router.get("/expenses-timeline", auth, async (req, res) => {
 });
 
 // ----- Dashboard summary -----
-router.get("/dashboard", auth, async (req, res) => {
+router.get("/summary", auth, async (req, res) => {
   try {
     const userId = new mongoose.Types.ObjectId(req.userId);
 
@@ -74,6 +73,7 @@ router.get("/dashboard", auth, async (req, res) => {
       { $match: { user: userId } },
       { $group: { _id: null, total: { $sum: "$amount" } } },
     ]);
+
     const [incomeTotalAggregate] = await Income.aggregate([
       { $match: { user: userId } },
       { $group: { _id: null, total: { $sum: "$amount" } } },
@@ -93,7 +93,7 @@ router.get("/dashboard", auth, async (req, res) => {
 });
 
 // ----- Download Expenses CSV -----
-router.get("/download/expenses", auth, async (req, res) => {
+router.get("/expenses/download/csv", auth, async (req, res) => {
   try {
     const { start, end } = req.query;
     const userId = new mongoose.Types.ObjectId(req.userId);
@@ -132,7 +132,7 @@ router.get("/download/expenses", auth, async (req, res) => {
 });
 
 // ----- Download Incomes CSV -----
-router.get("/download/incomes", auth, async (req, res) => {
+router.get("/incomes/download/csv", auth, async (req, res) => {
   try {
     const { start, end } = req.query;
     const userId = new mongoose.Types.ObjectId(req.userId);

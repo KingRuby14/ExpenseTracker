@@ -1,36 +1,57 @@
 import axios from "axios";
 
-const api = axios.create({
-  baseURL: "http://localhost:5000/api", // change if deployed
+const API = axios.create({
+  baseURL: "http://localhost:5000/api",
 });
 
-// attach JWT
-api.interceptors.request.use((cfg) => {
+// Attach token if present
+API.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  if (token) cfg.headers.Authorization = `Bearer ${token}`;
-  return cfg;
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
 });
 
-export const login = (payload) => api.post("/auth/login", payload);
-export const register = (formData) => api.post("/auth/register", formData);
-export const getProfile = () => api.get("/auth/me");
+//
+// ---------- AUTH ----------
+//
+export const register = (data) => API.post("/auth/register", data);
+export const login = (data) => API.post("/auth/login", data);
+export const getProfile = () => API.get("/auth/me");
 
-export const getDashboard = () => api.get("/reports/dashboard");
+//
+// ---------- EXPENSES ----------
+//
+export const addExpense = (data) => API.post("/expenses", data);
+export const getExpenses = (params) => API.get("/expenses", { params });
+export const updateExpense = (id, data) => API.put(`/expenses/${id}`, data);
+export const deleteExpense = (id) => API.delete(`/expenses/${id}`);
+
+// ✅ Download Expenses CSV
+export const downloadExpensesCSV = () =>
+  API.get("/expenses/download/csv", { responseType: "blob" });
+
+// ✅ Expenses by Category (for reports)
 export const getExpensesByCategory = () =>
-  api.get("/reports/expenses-by-category");
-export const getExpensesTimeline = () =>
-  api.get("/reports/expenses-timeline");
-export const downloadExpensesCSV = (params) =>
-  api.get("/reports/download/expenses", { params, responseType: "blob" });
-export const downloadIncomesCSV = (params) =>
-  api.get("/reports/download/incomes", { params, responseType: "blob" });
+  API.get("/reports/expenses-by-category");
 
-export const getExpenses = (params) => api.get("/expenses", { params });
-export const addExpense = (payload) => api.post("/expenses", payload);
-export const deleteExpense = (id) => api.delete(`/expenses/${id}`);
+//
+// ---------- INCOMES ----------
+//
+export const addIncome = (data) => API.post("/incomes", data);
+export const getIncomes = (params) => API.get("/incomes", { params });
+export const updateIncome = (id, data) => API.put(`/incomes/${id}`, data);
+export const deleteIncome = (id) => API.delete(`/incomes/${id}`);
 
-export const getIncomes = (params) => api.get("/incomes", { params });
-export const addIncome = (payload) => api.post("/incomes", payload);
-export const deleteIncome = (id) => api.delete(`/incomes/${id}`);
+// ✅ Download Incomes CSV
+export const downloadIncomesCSV = () =>
+  API.get("/incomes/download/csv", { responseType: "blob" });
 
-export default api;
+// ✅ Incomes by Category (optional reports)
+export const getIncomesByCategory = () =>
+  API.get("/reports/incomes-by-category");
+
+//
+// ---------- REPORTS ----------
+//
+export const getDashboard = () => API.get("/reports/summary");
+export const getExpensesTimeline = () => API.get("/reports/timeline");

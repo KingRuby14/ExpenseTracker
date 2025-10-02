@@ -1,11 +1,19 @@
 import { useState } from "react";
-import { login, register } from "../api/api";
+import { login, register } from "../api/api.js";
+import { Eye, EyeOff, Trash2, Upload } from "lucide-react";
 
 export default function AuthCard({ onAuth }) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
-  const [regForm, setRegForm] = useState({ name: "", email: "", password: "", avatar: null });
+  const [regForm, setRegForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    avatar: null,
+  });
   const [error, setError] = useState("");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegPassword, setShowRegPassword] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -37,36 +45,60 @@ export default function AuthCard({ onAuth }) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white p-6">
-      <div className="w-[1000px] h-[600px] bg-white shadow-2xl rounded-2xl flex overflow-hidden">
+      <div className="w-full h-auto bg-white shadow-2xl rounded-2xl flex overflow-hidden relative">
+        {/* TOP TITLE */}
+        <h1 className="absolute top-6 left-6 text-lg font-bold">
+          Expense Tracker
+        </h1>
 
         {/* LEFT SIDE: LOGIN / REGISTER */}
         <div className="w-1/2 p-10 flex items-center justify-center relative">
           <div
-            className={`absolute w-full transition-transform duration-700 ${isFlipped ? "rotate-y-180" : ""}`}
+            className={`absolute w-full transition-transform duration-700 ${
+              isFlipped ? "rotate-y-180" : ""
+            }`}
             style={{ transformStyle: "preserve-3d" }}
           >
             {/* LOGIN */}
-            <div className="absolute -top-40 p-6 backface-hidden items-center justify-center">
-              <h2 className="text-xl font-bold mb-2">Welcome Back</h2>
-              <p className="text-gray-500 mb-6 text-sm">Please enter your details to log in</p>
+            <div className="absolute -top-40 p-6 backface-hidden w-full">
+              <h2 className="text-xl text-center font-bold mb-2">Welcome Back</h2>
+              <p className="text-gray-500 mb-6 text-center text-sm">
+                Please enter your details to log in
+              </p>
               {error && <div className="text-red-500 mb-2">{error}</div>}
-              <form onSubmit={handleLogin} className="space-y-4">
+              <form onSubmit={handleLogin} className="space-y-4 w-full">
                 <input
                   className="w-full border p-3 rounded bg-gray-50"
                   placeholder="Email Address"
                   type="email"
                   value={loginForm.email}
-                  onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+                  onChange={(e) =>
+                    setLoginForm({ ...loginForm, email: e.target.value })
+                  }
                   required
                 />
-                <input
-                  className="w-full border p-3 rounded bg-gray-50"
-                  placeholder="Password"
-                  type="password"
-                  value={loginForm.password}
-                  onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                  required
-                />
+
+                {/* Password with toggle */}
+                <div className="relative">
+                  <input
+                    className="w-full border p-3 rounded bg-gray-50"
+                    placeholder="Password"
+                    type={showLoginPassword ? "text" : "password"}
+                    value={loginForm.password}
+                    onChange={(e) =>
+                      setLoginForm({ ...loginForm, password: e.target.value })
+                    }
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-3 text-gray-500"
+                    onClick={() => setShowLoginPassword(!showLoginPassword)}
+                  >
+                    {showLoginPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+
                 <button className="w-full bg-purple-600 text-white py-3 rounded font-medium hover:bg-purple-700">
                   LOGIN
                 </button>
@@ -85,26 +117,60 @@ export default function AuthCard({ onAuth }) {
 
             {/* REGISTER */}
             <div
-              className="absolute -top-52 p-6 rotate-y-180 backface-hidden"
+              className="absolute -top-52 p-6 rotate-y-180 backface-hidden w-full"
               style={{ transform: "rotateY(180deg)" }}
             >
-              <h2 className="text-xl font-bold mb-2">Create an Account</h2>
-              <p className="text-gray-500 mb-6 text-sm">Join us today by entering your details below.</p>
+              <h2 className="text-xl font-bold mb-2 text-center">
+                Create an Account
+              </h2>
+              <p className="text-gray-500 mb-6 text-center text-sm">
+                Join us today by entering your details below.
+              </p>
               {error && <div className="text-red-500 mb-2">{error}</div>}
-              <form onSubmit={handleRegister} className="space-y-4">
-                <div  className="rounded-full w-20 h-20 border-red-700 bg-black">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="absolute top-40 right-36"
-                    onChange={(e) => setRegForm({ ...regForm, avatar: e.target.files[0] })}
-                  />
+              <form onSubmit={handleRegister} className="space-y-4 w-full flex flex-col items-center">
+                {/* Profile Picture Upload */}
+                <div className="flex flex-col items-center mb-4">
+                  <div className="relative">
+                    <img
+                      src={
+                        regForm.avatar
+                          ? URL.createObjectURL(regForm.avatar)
+                          : "/c38411ba-6bda-4550-b188-ca7897add095.png"
+                      }
+                      alt="Avatar"
+                      className="w-20 h-20 rounded-full object-contain border-2 border-purple-600"
+                    />
+                    {regForm.avatar && (
+                      <button
+                        type="button"
+                        className="absolute bottom-0 right-0 bg-red-500 text-white rounded-full p-1"
+                        onClick={() => setRegForm({ ...regForm, avatar: null })}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
+                  {/* Upload button (small icon) */}
+                  <label className=" absolute top-24 left-64 cursor-pointer mt-2 bg-purple-600 p-2 rounded-full text-white hover:bg-purple-700">
+                    <Upload size={15} />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) =>
+                        setRegForm({ ...regForm, avatar: e.target.files[0] })
+                      }
+                    />
+                  </label>
                 </div>
+
                 <input
                   className="w-full border p-3 rounded bg-gray-50"
                   placeholder="Full Name"
                   value={regForm.name}
-                  onChange={(e) => setRegForm({ ...regForm, name: e.target.value })}
+                  onChange={(e) =>
+                    setRegForm({ ...regForm, name: e.target.value })
+                  }
                   required
                 />
                 <input
@@ -112,17 +178,33 @@ export default function AuthCard({ onAuth }) {
                   placeholder="Email Address"
                   type="email"
                   value={regForm.email}
-                  onChange={(e) => setRegForm({ ...regForm, email: e.target.value })}
+                  onChange={(e) =>
+                    setRegForm({ ...regForm, email: e.target.value })
+                  }
                   required
                 />
-                <input
-                  className="w-full border p-3 rounded bg-gray-50"
-                  placeholder="Password"
-                  type="password"
-                  value={regForm.password}
-                  onChange={(e) => setRegForm({ ...regForm, password: e.target.value })}
-                  required
-                />
+
+                {/* Password with toggle */}
+                <div className="relative w-full">
+                  <input
+                    className="w-full border p-3 rounded bg-gray-50"
+                    placeholder="Password"
+                    type={showRegPassword ? "text" : "password"}
+                    value={regForm.password}
+                    onChange={(e) =>
+                      setRegForm({ ...regForm, password: e.target.value })
+                    }
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-3 text-gray-500"
+                    onClick={() => setShowRegPassword(!showRegPassword)}
+                  >
+                    {showRegPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+
                 <button className="w-full bg-purple-600 text-white py-3 rounded font-medium hover:bg-purple-700">
                   SIGN UP
                 </button>
@@ -145,16 +227,16 @@ export default function AuthCard({ onAuth }) {
         <div className="w-1/2 bg-purple-100 flex flex-col justify-center items-center p-10 space-y-6">
           <div className="bg-white shadow rounded-xl p-6 w-full">
             <p className="text-sm text-gray-500">Track Your Income & Expenses</p>
-            <h3 className="text-3xl font-bold text-purple-700">$430,000</h3>
+            <h3 className="text-3xl font-bold text-purple-700">₹ 430,000</h3>
           </div>
 
           <div className="bg-white shadow rounded-xl p-6 w-full">
             <div className="flex justify-between items-center mb-4">
-              <h4 className="font-bold">All Transactions</h4>
-              <button className="text-purple-600 text-sm font-medium">View More</button>
+              <span className="text-white py-2 px-4 rounded-full text-sm font-medium bg-purple-800">
+                Track Your Expense & Income
+              </span>
             </div>
-            {/* Replace this with chart component or image */}
-            <img src="/chart.png" alt="Transactions Chart" className="w-full" />
+            <img src="/1.png" alt="Transactions Chart" className="w-full" />
           </div>
         </div>
       </div>

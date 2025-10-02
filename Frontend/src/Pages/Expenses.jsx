@@ -1,103 +1,310 @@
 import { useEffect, useState } from "react";
-import { getExpenses, addExpense, deleteExpense, downloadExpensesCSV } from "../api/api";
+import {
+  getExpenses,
+  addExpense,
+  deleteExpense,
+} from "../api/api.js";
 import Sidebar from "../Components/Sidebar";
 import Navbar from "../Components/Navbar";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { Plus, Trash2 } from "lucide-react";
 
-export default function Expenses() {
-  const [list, setList] = useState([]);
-  const [form, setForm] = useState({ amount: "", category: "Food", date: "", description: "" });
-  const [loading, setLoading] = useState(false);
+// === Utility: group transactions by timeframe ===
+function buildTimeline(transactions, mode) {
+  const map = new Map();
 
-  const load = () => getExpenses().then(r=>setList(r.data)).catch(()=>setList([]));
+  transactions.forEach((t) => {
+    const date = new Date(t.date);
+    let key;
+    if (mode === "day") {
+      key = date.toISOString().substring(0, 10); // yyyy-mm-dd
+    } else if (mode === "month") {
+      key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    } else {
+      key = `${date.getFullYear()}`;
+    }
 
-  useEffect(()=>{ load() }, []);
+    const sortKey = date.getTime();
 
-  const handleAdd = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+    if (!map.has(key)) {
+      map.set(key, { period: key, expense: 0, details: [] });
+    }
+    map.get(key).expense += Number(t.amount);
+    map.get(key).details.push({ name: t.name, amount: t.amount });
+    map.get(key).sortKey = sortKey;
+  });
+
+  return Array.from(map.values()).sort((a, b) => a.sortKey - b.sortKey);
+}
+
+// === Utility: download CSV ===
+function downloadCSV(transactions) {
+  if (!transactions.length) return;
+
+  const header = ["Name", "Amount", "Date"];
+  const rows = transactions.map((tx) => [tx.name, tx.amount, tx.date]);
+
+  const csvContent =
+    [header, ...rows].map((r) => r.join(",")).join("\n");
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", "expense_report.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+export default function Expense() {
+  const [summary, setSummary] = useState({ totalExpenses: 0 });
+  const [transactions, setTransactions] = useState([]);
+  const [form, setForm] = useState({ name: "", amount: "", date: "" });
+  const [mode, setMode] = useState("day"); // day | month | year
+
+  // Load expenses
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
     try {
-      await addExpense({ ...form, amount: Number(form.amount) });
-      setForm({ amount: "", category: "Food", date: "", description: "" });
-      load();
-    } catch (err) {}
-    setLoading(false);
-  };
+      const expensesRes = await getExpenses();
+      const mapped = expensesRes.data.map((e) => ({
+        id: e._id,
+        name: e.category,
+        amount: e.amount,
+        date: e.date.substring(0, 10),
+      }));
 
-  const handleDelete = async (id) => {
-    if(!confirm("Delete this expense?")) return;
-    await deleteExpense(id);
-    load();
-  };
-
-  const handleDownload = async () => {
-    try {
-      const res = await downloadExpensesCSV();
-      const blob = new Blob([res.data], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url; a.download = "expenses.csv"; a.click();
-      URL.revokeObjectURL(url);
+      setTransactions(mapped.sort((a, b) => new Date(b.date) - new Date(a.date)));
+      setSummary({
+        totalExpenses: mapped.reduce((sum, tx) => sum + Number(tx.amount), 0),
+      });
     } catch (err) {
-      alert(err?.response?.data?.message || "No data to download");
+      console.error("Error loading expenses:", err);
     }
   };
 
-  return (
-    <div className="flex">
-      <Sidebar />
-      <div className="flex-1">
-        <Navbar title="Expenses" />
-        <div className="p-6">
-          <div className="mb-6 grid grid-cols-2 gap-4">
-            <form onSubmit={handleAdd} className="bg-white p-4 rounded shadow space-y-3">
-              <h3 className="font-semibold">Add Expense</h3>
-              <input value={form.amount} onChange={e=>setForm({...form, amount:e.target.value})} placeholder="Amount" className="w-full border p-2 rounded" required />
-              <select value={form.category} onChange={e=>setForm({...form, category:e.target.value})} className="w-full border p-2 rounded">
-                <option>Food</option><option>Transport</option><option>Bills</option><option>Shopping</option><option>Other</option>
-              </select>
-              <input type="date" value={form.date} onChange={e=>setForm({...form, date:e.target.value})} className="w-full border p-2 rounded" required />
-              <input value={form.description} onChange={e=>setForm({...form, description:e.target.value})} placeholder="Description" className="w-full border p-2 rounded" />
-              <button disabled={loading} className="bg-blue-600 text-white px-4 py-2 rounded">{loading ? "Adding..." : "Add Expense"}</button>
-            </form>
+  const handleAdd = async () => {
+    if (!form.name || !form.amount || !form.date) return;
+    try {
+      const res = await addExpense({
+        category: form.name,
+        amount: form.amount,
+        date: form.date,
+      });
 
-            <div className="bg-white p-4 rounded shadow">
+      const newTx = {
+        id: res.data._id || Date.now(),
+        name: form.name,
+        amount: form.amount,
+        date: form.date,
+      };
+
+      setTransactions((prev) => [newTx, ...prev]);
+      setSummary((prev) => ({
+        totalExpenses: prev.totalExpenses + Number(form.amount),
+      }));
+
+      setForm({ name: "", amount: "", date: "" });
+    } catch (err) {
+      console.error("Error adding expense:", err);
+    }
+  };
+
+  const handleDelete = async (tx) => {
+    try {
+      await deleteExpense(tx.id);
+      setTransactions((prev) => prev.filter((t) => t.id !== tx.id));
+      setSummary((prev) => ({
+        totalExpenses: prev.totalExpenses - Number(tx.amount),
+      }));
+    } catch (err) {
+      console.error("Error deleting expense:", err);
+    }
+  };
+
+  const timeline = buildTimeline(transactions, mode);
+
+  return (
+    <div className="flex bg-gray-50 min-h-screen">
+      <Sidebar />
+      <div className="flex-1 flex flex-col">
+        <Navbar />
+        <div className="p-4 sm:p-6 space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Add Expense */}
+            <div className=" w-full max-h-80 bg-gradient-to-tr from-purple-50 via-white to-indigo-50 shadow-lg rounded-2xl p-5 sm:p-6">
+              <h4 className="font-semibold text-indigo-700 text-lg mb-4 text-center">
+                Add Expense
+              </h4>
+
+              <input
+                type="text"
+                placeholder="Name"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                className="w-full border rounded-lg p-3 mb-3 text-sm focus:ring-2 focus:ring-indigo-400 outline-none"
+              />
+              <input
+                type="number"
+                placeholder="Amount"
+                value={form.amount}
+                onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                className="w-full border rounded-lg p-3 mb-3 text-sm focus:ring-2 focus:ring-indigo-400 outline-none"
+              />
+              <input
+                type="date"
+                value={form.date}
+                onChange={(e) => setForm({ ...form, date: e.target.value })}
+                className="w-full border rounded-lg p-3 mb-4 text-sm focus:ring-2 focus:ring-indigo-400 outline-none"
+              />
+
+              <button
+                onClick={handleAdd}
+                className="w-full bg-gradient-to-r from-red-500 via-pink-500 to-orange-500 text-white py-3 text-sm font-semibold rounded-lg shadow-lg hover:opacity-90 transition flex items-center justify-center gap-2"
+              >
+                <Plus size={16} /> Add Expense
+              </button>
+            </div>
+
+            {/* Transactions */}
+            <div className="w-full max-h-80 bg-white shadow rounded-2xl p-4 flex flex-col col-span-2">
               <div className="flex justify-between items-center mb-3">
-                <h3 className="font-semibold">Actions</h3>
-                <button onClick={handleDownload} className="bg-indigo-600 text-white px-3 py-1 rounded">Download CSV</button>
+                <h4 className="font-medium text-sm">Recent Expenses</h4>
+                <button
+                  onClick={() => downloadCSV(transactions)}
+                  className="px-3 py-1 text-xs bg-indigo-500 text-white rounded-md hover:bg-indigo-600"
+                >
+                  Download Report
+                </button>
               </div>
-              <p className="text-sm text-gray-500">Export expenses CSV for the user.</p>
+
+              <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
+                <span>Total Expense:</span>
+                <span className="font-semibold text-red-600">₹{summary.totalExpenses}</span>
+              </div>
+
+              <div className="flex-1 overflow-y-auto max-h-72 pr-2 scrollbar-hide">
+                <ul className="space-y-2.5">
+                  {transactions.map((tx) => (
+                    <li
+                      key={tx.id}
+                      className="flex items-center justify-between bg-gray-50 p-3 rounded-lg shadow-sm"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 flex items-center justify-center rounded-full bg-red-100 text-lg">
+                          💸
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-800">
+                            {tx.name}
+                          </p>
+                          <p className="text-xs text-gray-500">{tx.date}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-bold text-red-500">
+                          ₹{tx.amount}
+                        </span>
+                        <button
+                          className="text-red-500 hover:text-red-700"
+                          onClick={() => handleDelete(tx)}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
 
-          <div className="bg-white rounded shadow overflow-auto">
-            <table className="w-full table-auto">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="p-2 text-left">Amount</th>
-                  <th className="p-2 text-left">Category</th>
-                  <th className="p-2 text-left">Date</th>
-                  <th className="p-2 text-left">Description</th>
-                  <th className="p-2 text-left">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {list.map((e)=>(
-                  <tr key={e._id} className="border-t">
-                    <td className="p-2">₹{e.amount}</td>
-                    <td className="p-2">{e.category}</td>
-                    <td className="p-2">{new Date(e.date).toLocaleDateString()}</td>
-                    <td className="p-2">{e.description}</td>
-                    <td className="p-2">
-                      <button onClick={()=>handleDelete(e._id)} className="text-red-600">Delete</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {/* Chart */}
+          <div className="bg-white shadow rounded-xl p-4 sm:p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="font-semibold">Expense Trend</h4>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setMode("day")}
+                  className={`px-3 py-1 text-xs rounded-md ${
+                    mode === "day" ? "bg-red-500 text-white" : "bg-gray-100"
+                  }`}
+                >
+                  Day
+                </button>
+                <button
+                  onClick={() => setMode("month")}
+                  className={`px-3 py-1 text-xs rounded-md ${
+                    mode === "month" ? "bg-red-500 text-white" : "bg-gray-100"
+                  }`}
+                >
+                  Month
+                </button>
+                <button
+                  onClick={() => setMode("year")}
+                  className={`px-3 py-1 text-xs rounded-md ${
+                    mode === "year" ? "bg-red-500 text-white" : "bg-gray-100"
+                  }`}
+                >
+                  Year
+                </button>
+              </div>
+            </div>
 
+            <div className="w-full h-64 sm:h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={timeline}>
+                  <defs>
+                    <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#dc2626" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#dc2626" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="period" />
+                  <YAxis />
+                  <Tooltip
+                    formatter={(value) => [`₹${value}`, "Amount"]}
+                    labelFormatter={(label) => {
+                      const item = timeline.find((t) => t.period === label);
+                      if (!item) return label;
+                      return `${label}\n${item.details
+                        .map((d) => `${d.name}`)
+                        .join(", ")}`;
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="expense"
+                    stroke="#dc2626"
+                    fillOpacity={1}
+                    fill="url(#colorExpense)"
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    activeDot={{ r: 5 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </div>
       </div>
+
+      <style>{`
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
     </div>
   );
 }
