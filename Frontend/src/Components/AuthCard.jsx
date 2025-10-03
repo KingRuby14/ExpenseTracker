@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { login, register } from "../api/api.js";
-import { Eye, EyeOff, Trash2, Upload } from "lucide-react";
+import { Eye, EyeOff, Trash2, Upload, User } from "lucide-react";
 
 export default function AuthCard({ onAuth }) {
   const [isFlipped, setIsFlipped] = useState(false);
@@ -44,29 +44,38 @@ export default function AuthCard({ onAuth }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white p-6">
-      <div className="w-full h-auto bg-white shadow-2xl rounded-2xl flex overflow-hidden relative">
-        {/* TOP TITLE */}
-        <h1 className="absolute top-6 left-6 text-lg font-bold">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="w-full max-w-6xl bg-white shadow-2xl rounded-2xl flex flex-col lg:flex-row overflow-hidden relative">
+        {/* TITLE */}
+        <h1 className="absolute top-4 left-4 text-lg sm:text-xl font-bold z-10">
           Expense Tracker
         </h1>
 
         {/* LEFT SIDE: LOGIN / REGISTER */}
-        <div className="w-1/2 p-10 flex items-center justify-center relative">
+        <div className="w-full lg:w-1/2 p-14 sm:p-10 flex items-center justify-center relative">
           <div
-            className={`absolute w-full transition-transform duration-700 ${
-              isFlipped ? "rotate-y-180" : ""
-            }`}
-            style={{ transformStyle: "preserve-3d" }}
+            className="w-full h-[30rem] max-w-md transition-transform duration-700 "
+            style={{
+              transformStyle: "preserve-3d",
+              transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
+            }}
           >
             {/* LOGIN */}
-            <div className="absolute -top-40 p-6 backface-hidden w-full">
-              <h2 className="text-xl text-center font-bold mb-2">Welcome Back</h2>
-              <p className="text-gray-500 mb-6 text-center text-sm">
+            <div
+              className="p-4 sm:p-6 w-full "
+              style={{ backfaceVisibility: "hidden" }}
+            >
+              <h2 className="text-2xl text-center font-bold mb-2">
+                Welcome Back
+              </h2>
+              <p className="text-gray-500 mb-6 text-center text-sm sm:text-base">
                 Please enter your details to log in
               </p>
               {error && <div className="text-red-500 mb-2">{error}</div>}
-              <form onSubmit={handleLogin} className="space-y-4 w-full">
+              <form
+                onSubmit={handleLogin}
+                className="space-y-4 w-full max-w-sm mx-auto"
+              >
                 <input
                   className="w-full border p-3 rounded bg-gray-50"
                   placeholder="Email Address"
@@ -102,14 +111,14 @@ export default function AuthCard({ onAuth }) {
                 <button className="w-full bg-purple-600 text-white py-3 rounded font-medium hover:bg-purple-700">
                   LOGIN
                 </button>
-                <p className="text-center text-sm">
+                <p className="text-center text-sm sm:text-base">
                   Don’t have an account?{" "}
                   <button
                     type="button"
-                    className="text-purple-600"
+                    className="text-purple-600 font-medium"
                     onClick={() => setIsFlipped(true)}
                   >
-                    SignUp
+                    Sign Up
                   </button>
                 </p>
               </form>
@@ -117,29 +126,37 @@ export default function AuthCard({ onAuth }) {
 
             {/* REGISTER */}
             <div
-              className="absolute -top-52 p-6 rotate-y-180 backface-hidden w-full"
-              style={{ transform: "rotateY(180deg)" }}
+              className="p-5  w-full absolute top-0 left-0"
+              style={{
+                transform: "rotateY(180deg)",
+                backfaceVisibility: "hidden",
+              }}
             >
-              <h2 className="text-xl font-bold mb-2 text-center">
+              <h2 className="text-2xl font-bold mb-2 text-center">
                 Create an Account
               </h2>
-              <p className="text-gray-500 mb-6 text-center text-sm">
+              <p className="text-gray-500 mb-6 text-center text-sm sm:text-base">
                 Join us today by entering your details below.
               </p>
               {error && <div className="text-red-500 mb-2">{error}</div>}
-              <form onSubmit={handleRegister} className="space-y-4 w-full flex flex-col items-center">
+              <form
+                onSubmit={handleRegister}
+                className="space-y-4 w-full max-w-sm mx-auto flex flex-col items-center"
+              >
                 {/* Profile Picture Upload */}
-                <div className="flex flex-col items-center mb-4">
-                  <div className="relative">
-                    <img
-                      src={
-                        regForm.avatar
-                          ? URL.createObjectURL(regForm.avatar)
-                          : "/c38411ba-6bda-4550-b188-ca7897add095.png"
-                      }
-                      alt="Avatar"
-                      className="w-20 h-20 rounded-full object-contain border-2 border-purple-600"
-                    />
+                <div className="flex gap-5 items-center mb-4 relative">
+                  <div className="relative ">
+                    {regForm.avatar ? (
+                      <img
+                        src={URL.createObjectURL(regForm.avatar)}
+                        alt="Avatar"
+                        className="w-14 h-14 rounded-full object-cover border-2 border-purple-600"
+                      />
+                    ) : (
+                      <div className="w-14 h-14 rounded-full border-2 border-purple-600 flex items-center justify-center text-purple-600 bg-purple-50">
+                        <User size={28} />
+                      </div>
+                    )}
                     {regForm.avatar && (
                       <button
                         type="button"
@@ -150,8 +167,7 @@ export default function AuthCard({ onAuth }) {
                       </button>
                     )}
                   </div>
-                  {/* Upload button (small icon) */}
-                  <label className=" absolute top-24 left-64 cursor-pointer mt-2 bg-purple-600 p-2 rounded-full text-white hover:bg-purple-700">
+                  <label className="mt-2 cursor-pointer bg-purple-600 p-2 rounded-full text-white hover:bg-purple-700 flex items-center justify-center">
                     <Upload size={15} />
                     <input
                       type="file"
@@ -205,14 +221,14 @@ export default function AuthCard({ onAuth }) {
                   </button>
                 </div>
 
-                <button className="w-full bg-purple-600 text-white py-3 rounded font-medium hover:bg-purple-700">
+                <button className="w-full bg-purple-600 text-white py-2 rounded font-medium hover:bg-purple-700">
                   SIGN UP
                 </button>
-                <p className="text-center text-sm">
+                <p className="text-center text-sm sm:text-base pb-16">
                   Already have an account?{" "}
                   <button
                     type="button"
-                    className="text-purple-600"
+                    className="text-purple-600 font-medium"
                     onClick={() => setIsFlipped(false)}
                   >
                     Login
@@ -223,20 +239,26 @@ export default function AuthCard({ onAuth }) {
           </div>
         </div>
 
-        {/* RIGHT SIDE: PURPLE INFO PANEL */}
-        <div className="w-1/2 bg-purple-100 flex flex-col justify-center items-center p-10 space-y-6">
+        {/* RIGHT SIDE: PURPLE INFO PANEL - HIDDEN ON MOBILE */}
+        <div className="hidden lg:flex w-1/2 bg-purple-100 flex-col justify-center items-center p-6 sm:p-10 space-y-6">
           <div className="bg-white shadow rounded-xl p-6 w-full">
-            <p className="text-sm text-gray-500">Track Your Income & Expenses</p>
+            <p className="text-sm sm:text-base text-gray-500">
+              Track Your Income & Expenses
+            </p>
             <h3 className="text-3xl font-bold text-purple-700">₹ 430,000</h3>
           </div>
 
           <div className="bg-white shadow rounded-xl p-6 w-full">
             <div className="flex justify-between items-center mb-4">
-              <span className="text-white py-2 px-4 rounded-full text-sm font-medium bg-purple-800">
+              <span className="text-white py-2 px-4 rounded-full text-sm sm:text-base font-medium bg-purple-800">
                 Track Your Expense & Income
               </span>
             </div>
-            <img src="/1.png" alt="Transactions Chart" className="w-full" />
+            <img
+              src="/1.png"
+              alt="Transactions Chart"
+              className="w-full h-auto rounded"
+            />
           </div>
         </div>
       </div>
