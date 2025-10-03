@@ -18,8 +18,24 @@ connectDB();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// CORS configuration
+const allowedOrigins = [
+  'http://localhost:5173', // Vite dev server
+  process.env.CLIENT_URL   // Deployed frontend (Netlify)
+].filter(Boolean); // removes undefined if CLIENT_URL not set
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || '*' 
+  origin: function(origin, callback) {
+    // allow requests with no origin (like Postman)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true,
 }));
 
 // serve uploads
