@@ -18,23 +18,19 @@ connectDB();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// CORS configuration
+// CORS
 const allowedOrigins = [
-  'http://localhost:5173', // Vite dev server
-  process.env.CLIENT_URL   // Deployed frontend (Netlify)
-].filter(Boolean); // removes undefined if CLIENT_URL not set
+  'http://localhost:5173', // dev frontend
+  process.env.CLIENT_URL   // Netlify frontend
+].filter(Boolean);
 
 app.use(cors({
   origin: function(origin, callback) {
-    // allow requests with no origin (like Postman)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    } else {
-      return callback(new Error('Not allowed by CORS'));
-    }
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET','POST','PUT','DELETE'],
   credentials: true,
 }));
 
@@ -42,12 +38,11 @@ app.use(cors({
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // API routes
-app.use('/api/auth', authRoutes); 
+app.use('/api/auth', authRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/incomes', incomeRoutes);
 app.use('/api/reports', reportsRoutes);
 
-// health check route
 app.get('/', (req, res) => res.json({ ok: true, env: process.env.NODE_ENV || 'dev' }));
 
 const PORT = process.env.PORT || 5000;

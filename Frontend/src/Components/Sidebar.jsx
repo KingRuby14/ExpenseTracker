@@ -13,8 +13,6 @@ export default function Sidebar() {
       .catch(() => setUser(null));
   }, []);
 
-  const BASE_URL = "http://localhost:5000";
-
   const isActive = (path) =>
     location.pathname === path
       ? "bg-purple-100 text-purple-700 font-semibold"
@@ -29,9 +27,7 @@ export default function Sidebar() {
           <img
             src={
               user?.avatar
-                ? user.avatar.startsWith("http")
-                  ? user.avatar
-                  : `${BASE_URL}${user.avatar}`
+                ? user.avatar
                 : "/default-avatar.png"
             }
             alt="avatar"
