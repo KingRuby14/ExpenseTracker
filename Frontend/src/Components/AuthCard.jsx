@@ -1,8 +1,10 @@
-import { useState } from "react";
-import { login, register } from "../api/api.js";
+import { useState, useContext } from "react";
+import { register as apiRegister } from "../api/api.js";
 import { Eye, EyeOff, Trash2, Upload, User } from "lucide-react";
+import { AuthContext } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
-export default function AuthCard({ onAuth }) {
+export default function AuthCard() {
   const [isFlipped, setIsFlipped] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [regForm, setRegForm] = useState({
@@ -15,19 +17,26 @@ export default function AuthCard({ onAuth }) {
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegPassword, setShowRegPassword] = useState(false);
 
+  const { login: contextLogin } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  // ---------- LOGIN ----------
   const handleLogin = async (e) => {
     e.preventDefault();
+    setError("");
     try {
-      const res = await login(loginForm);
-      localStorage.setItem("token", res.data.token);
-      onAuth();
+      // use AuthContext → this will call API login and set user + token
+      await contextLogin(loginForm.email, loginForm.password);
+      navigate("/"); // go to dashboard/home
     } catch (err) {
       setError(err?.response?.data?.message || "Login failed");
     }
   };
 
+  // ---------- REGISTER ----------
   const handleRegister = async (e) => {
     e.preventDefault();
+    setError("");
     try {
       const fd = new FormData();
       fd.append("name", regForm.name);
@@ -35,9 +44,13 @@ export default function AuthCard({ onAuth }) {
       fd.append("password", regForm.password);
       if (regForm.avatar) fd.append("avatar", regForm.avatar);
 
-      const res = await register(fd);
+      const res = await apiRegister(fd);
+
+      // backend returns: { token, user: { ... } }
       localStorage.setItem("token", res.data.token);
-      onAuth();
+
+      // simplest: navigate to home; AuthProvider can call /auth/me on mount
+      navigate("/");
     } catch (err) {
       setError(err?.response?.data?.message || "Register failed");
     }
@@ -54,7 +67,7 @@ export default function AuthCard({ onAuth }) {
         {/* LEFT SIDE: LOGIN / REGISTER */}
         <div className="w-full lg:w-1/2 p-14 sm:p-10 flex items-center justify-center relative">
           <div
-            className="w-full h-[30rem] max-w-md transition-transform duration-700 "
+            className="w-full h-[30rem] max-w-md transition-transform duration-700"
             style={{
               transformStyle: "preserve-3d",
               transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
@@ -62,7 +75,7 @@ export default function AuthCard({ onAuth }) {
           >
             {/* LOGIN */}
             <div
-              className="p-4 sm:p-6 w-full "
+              className="p-4 sm:p-6 w-full"
               style={{ backfaceVisibility: "hidden" }}
             >
               <h2 className="text-2xl text-center font-bold mb-2">
@@ -72,6 +85,7 @@ export default function AuthCard({ onAuth }) {
                 Please enter your details to log in
               </p>
               {error && <div className="text-red-500 mb-2">{error}</div>}
+
               <form
                 onSubmit={handleLogin}
                 className="space-y-4 w-full max-w-sm mx-auto"
@@ -126,7 +140,7 @@ export default function AuthCard({ onAuth }) {
 
             {/* REGISTER */}
             <div
-              className="p-5  w-full absolute top-0 left-0"
+              className="p-5 w-full absolute top-0 left-0"
               style={{
                 transform: "rotateY(180deg)",
                 backfaceVisibility: "hidden",
@@ -139,13 +153,14 @@ export default function AuthCard({ onAuth }) {
                 Join us today by entering your details below.
               </p>
               {error && <div className="text-red-500 mb-2">{error}</div>}
+
               <form
                 onSubmit={handleRegister}
                 className="space-y-4 w-full max-w-sm mx-auto flex flex-col items-center"
               >
                 {/* Profile Picture Upload */}
                 <div className="flex gap-5 items-center mb-4 relative">
-                  <div className="relative ">
+                  <div className="relative">
                     {regForm.avatar ? (
                       <img
                         src={URL.createObjectURL(regForm.avatar)}
@@ -161,7 +176,9 @@ export default function AuthCard({ onAuth }) {
                       <button
                         type="button"
                         className="absolute bottom-0 right-0 bg-red-500 text-white rounded-full p-1"
-                        onClick={() => setRegForm({ ...regForm, avatar: null })}
+                        onClick={() =>
+                          setRegForm({ ...regForm, avatar: null })
+                        }
                       >
                         <Trash2 size={14} />
                       </button>
@@ -174,7 +191,10 @@ export default function AuthCard({ onAuth }) {
                       accept="image/*"
                       className="hidden"
                       onChange={(e) =>
-                        setRegForm({ ...regForm, avatar: e.target.files[0] })
+                        setRegForm({
+                          ...regForm,
+                          avatar: e.target.files[0],
+                        })
                       }
                     />
                   </label>

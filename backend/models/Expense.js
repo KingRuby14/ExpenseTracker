@@ -8,4 +8,4 @@ const ExpenseSchema = new mongoose.Schema({
   description: { type: String, default: '' }
 }, { timestamps: true });
 
-module.exports = mongoose.model('Expense', ExpenseSchema);
+module.exports = mongoose.model('Expense', ExpenseSchema); 

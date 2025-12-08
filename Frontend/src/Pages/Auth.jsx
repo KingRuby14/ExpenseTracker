@@ -1,8 +1,17 @@
-import { useState } from "react";
+import { useContext, useEffect } from "react";
 import AuthCard from "../Components/AuthCard";
+import { AuthContext } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export default function Auth() {
-  const [authed, setAuthed] = useState(false);
-  if (authed) window.location.href = "/";
-  return <AuthCard onAuth={() => setAuthed(true)} />;
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  // If already logged in → redirect to home
+  useEffect(() => {
+    if (user) navigate("/");
+  }, [user, navigate]);
+
+  // Otherwise show login/register card
+  return <AuthCard />;
 }

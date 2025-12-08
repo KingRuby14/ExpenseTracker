@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+// src/App.jsx
+import { Routes, Route, Navigate } from "react-router-dom";
 import Auth from "./Pages/Auth";
 import Dashboard from "./Pages/Dashboard";
 import Expenses from "./Pages/Expenses";
@@ -11,22 +12,38 @@ function PrivateRoute({ children }) {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Auth />} />
-        <Route
-          path="/*"
-          element={
-            <PrivateRoute>
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/expenses" element={<Expenses />} />
-                <Route path="/incomes" element={<Incomes />} />
-              </Routes>
-            </PrivateRoute>
-          }
-        />
-      </Routes>
-    </BrowserRouter>
+    <Routes>
+      {/* Public route */}
+      <Route path="/login" element={<Auth />} />
+
+      {/* Protected routes */}
+      <Route
+        path="/"
+        element={
+          <PrivateRoute>
+            <Dashboard />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/expenses"
+        element={
+          <PrivateRoute>
+            <Expenses />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/incomes"
+        element={
+          <PrivateRoute>
+            <Incomes />
+          </PrivateRoute>
+        }
+      />
+
+      {/* Any unknown path → redirect to / */}
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
   );
 }
