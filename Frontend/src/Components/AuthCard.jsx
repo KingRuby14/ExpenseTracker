@@ -4,9 +4,6 @@ import { Eye, EyeOff, Trash2, Upload, User } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
-import { auth, googleProvider } from "../../firebase.js";
-import { signInWithPopup } from "firebase/auth";
-
 export default function AuthCard() {
   const [isFlipped, setIsFlipped] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
@@ -28,33 +25,11 @@ export default function AuthCard() {
     e.preventDefault();
     setError("");
     try {
+      // use AuthContext → this will call API login and set user + token
       await contextLogin(loginForm.email, loginForm.password);
-      navigate("/");
+      navigate("/"); // go to dashboard/home
     } catch (err) {
       setError(err?.response?.data?.message || "Login failed");
-    }
-  };
-
-  // ---------- GOOGLE LOGIN ----------
-  const handleGoogleLogin = async () => {
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const token = await result.user.getIdToken();
-
-      const res = await fetch(import.meta.env.VITE_API_URL + "/auth/google", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
-      });
-
-      const data = await res.json();
-
-      if (!data.token) throw new Error("Google login failed");
-
-      localStorage.setItem("token", data.token);
-      window.location.href = "/";
-    } catch (err) {
-      setError("Google login failed");
     }
   };
 
@@ -69,10 +44,13 @@ export default function AuthCard() {
       fd.append("password", regForm.password);
       if (regForm.avatar) fd.append("avatar", regForm.avatar);
 
-      await apiRegister(fd);
+      const res = await apiRegister(fd);
 
-      alert("Registered Successfully! Please verify email.");
-      setIsFlipped(false);
+      // backend returns: { token, user: { ... } }
+      localStorage.setItem("token", res.data.token);
+
+      // simplest: navigate to home; AuthProvider can call /auth/me on mount
+      navigate("/");
     } catch (err) {
       setError(err?.response?.data?.message || "Register failed");
     }
@@ -81,11 +59,12 @@ export default function AuthCard() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-max max-w-6xl h-[80vh] shadow-2xl rounded-2xl flex flex-col lg:flex-row overflow-hidden relative">
+        {/* TITLE */}
         <h1 className="absolute top-4 left-4 text-lg sm:text-xl font-bold z-10">
           Expense Tracker
         </h1>
 
-        {/* LEFT SIDE */}
+        {/* LEFT SIDE: LOGIN / REGISTER */}
         <div className="w-full lg:w-1/2 p-14 sm:p-10 flex items-center justify-center relative">
           <div
             className="w-full h-[30rem] max-w-md transition-transform duration-700"
@@ -122,6 +101,7 @@ export default function AuthCard() {
                   required
                 />
 
+                {/* Password with toggle */}
                 <div className="relative">
                   <input
                     className="w-full border p-3 rounded bg-gray-50"
@@ -149,24 +129,6 @@ export default function AuthCard() {
                 <button className="w-full bg-purple-600 text-white py-3 rounded font-medium hover:bg-purple-700">
                   LOGIN
                 </button>
-
-                {/* GOOGLE BUTTON */}
-                <button
-                  type="button"
-                  onClick={handleGoogleLogin}
-                  className="w-full bg-red-500 text-white py-3 rounded font-medium hover:bg-red-600"
-                >
-                  Continue with Google
-                </button>
-
-                {/* Forgot Password */}
-                <p
-                  className="text-center text-sm text-blue-600 cursor-pointer"
-                  onClick={() => navigate("/forgot")}
-                >
-                  Forgot Password?
-                </p>
-
                 <p className="text-center text-sm sm:text-base">
                   Don’t have an account?{" "}
                   <button
@@ -200,6 +162,7 @@ export default function AuthCard() {
                 onSubmit={handleRegister}
                 className="space-y-4 w-full max-w-sm mx-auto flex flex-col items-center"
               >
+                {/* Profile Picture Upload */}
                 <div className="flex gap-5 items-center mb-4 relative">
                   <div className="relative">
                     {regForm.avatar ? (
@@ -223,8 +186,7 @@ export default function AuthCard() {
                       </button>
                     )}
                   </div>
-
-                  <label className="mt-2 cursor-pointer bg-purple-600 p-2 rounded-full text-white hover:bg-purple-700">
+                  <label className="mt-2 cursor-pointer bg-purple-600 p-2 rounded-full text-white hover:bg-purple-700 flex items-center justify-center">
                     <Upload size={15} />
                     <input
                       type="file"
@@ -249,7 +211,6 @@ export default function AuthCard() {
                   }
                   required
                 />
-
                 <input
                   className="w-full border p-3 rounded bg-gray-50"
                   placeholder="Email Address"
@@ -261,6 +222,7 @@ export default function AuthCard() {
                   required
                 />
 
+                {/* Password with toggle */}
                 <div className="relative w-full">
                   <input
                     className="w-full border p-3 rounded bg-gray-50"
@@ -284,7 +246,6 @@ export default function AuthCard() {
                 <button className="w-full bg-purple-600 text-white py-2 rounded font-medium hover:bg-purple-700">
                   SIGN UP
                 </button>
-
                 <p className="text-center text-sm sm:text-base pb-16">
                   Already have an account?{" "}
                   <button
@@ -300,7 +261,7 @@ export default function AuthCard() {
           </div>
         </div>
 
-        {/* RIGHT SIDE */}
+        {/* RIGHT SIDE: PURPLE INFO PANEL - HIDDEN ON MOBILE */}
         <div className="hidden lg:flex w-1/2 bg-purple-100 flex-col justify-center items-center p-6 sm:p-10 space-y-6">
           <div className="bg-white shadow rounded-xl p-6 w-full">
             <p className="text-sm sm:text-base text-gray-500">

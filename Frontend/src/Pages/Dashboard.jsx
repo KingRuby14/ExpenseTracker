@@ -279,7 +279,9 @@ export default function Dashboard() {
                 }`}
               />
               {errors.name && (
-                <p className="text-red-500 text-xs mb-2 normal-case">Please enter a name</p>
+                <p className="text-red-500 text-xs mb-2 normal-case">
+                  Please enter a name
+                </p>
               )}
 
               <input
@@ -294,7 +296,9 @@ export default function Dashboard() {
                 }`}
               />
               {errors.amount && (
-                <p className="text-red-500 text-xs mb-2 normal-case">Please enter amount</p>
+                <p className="text-red-500 text-xs mb-2 normal-case">
+                  Please enter amount
+                </p>
               )}
 
               <input

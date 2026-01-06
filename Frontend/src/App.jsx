@@ -4,7 +4,6 @@ import Auth from "./Pages/Auth";
 import Dashboard from "./Pages/Dashboard";
 import Expenses from "./Pages/Expenses";
 import Incomes from "./Pages/Incomes";
-import ForgotPassword from "./Pages/ForgotPassword";
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem("token");
@@ -16,7 +15,7 @@ export default function App() {
     <Routes>
       {/* Public route */}
       <Route path="/login" element={<Auth />} />
-      <Route path="/forgot" element={<ForgotPassword />} />
+
       {/* Protected routes */}
       <Route
         path="/"
