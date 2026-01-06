@@ -58,7 +58,7 @@ export default function AuthCard() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-6xl bg-white shadow-2xl rounded-2xl flex flex-col lg:flex-row overflow-hidden relative">
+      <div className="w-max max-w-6xl h-[80vh] shadow-2xl rounded-2xl flex flex-col lg:flex-row overflow-hidden relative">
         {/* TITLE */}
         <h1 className="absolute top-4 left-4 text-lg sm:text-xl font-bold z-10">
           Expense Tracker
