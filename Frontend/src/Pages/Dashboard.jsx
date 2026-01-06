@@ -237,7 +237,7 @@ export default function Dashboard() {
       <Sidebar />
       <div className="flex-1 flex flex-col capitalize">
         <Navbar />
-        <div className="p-4 sm:p-6 space-y-6 capitalize">
+        <div className="p-6 sm:p-6 space-y-6 capitalize">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 capitalize">
             {/* Add Transaction */}
             <div

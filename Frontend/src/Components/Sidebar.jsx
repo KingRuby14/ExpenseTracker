@@ -21,7 +21,7 @@ export default function Sidebar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex flex-col w-48 bg-white border-r min-h-screen p-5">
+      <aside className="hidden lg:flex flex-col w-60 bg-white border-r min-h-screen p-5">
         {/* Profile Section */}
         <div className="flex flex-col items-center gap-3 mb-6">
           <img
