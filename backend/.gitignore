@@ -20,6 +20,7 @@ build
 .env.*
 client/.env
 server/.env
+firebase.json
 
 # Editor / OS files
 .vscode/*

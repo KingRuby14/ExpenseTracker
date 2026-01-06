@@ -4,6 +4,7 @@ import Auth from "./Pages/Auth";
 import Dashboard from "./Pages/Dashboard";
 import Expenses from "./Pages/Expenses";
 import Incomes from "./Pages/Incomes";
+import ForgotPassword from "./Pages/ForgotPassword";
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem("token");
@@ -44,6 +45,7 @@ export default function App() {
 
       {/* Any unknown path → redirect to / */}
       <Route path="*" element={<Navigate to="/" />} />
+      <Route path="/forgot" element={<ForgotPassword />} />
     </Routes>
   );
 }

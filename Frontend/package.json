@@ -13,6 +13,7 @@
     "axios": "^1.12.2",
     "dayjs": "^1.11.18",
     "emoji-picker-react": "^4.13.3",
+    "firebase": "^12.7.0",
     "framer-motion": "^12.23.22",
     "lucide-react": "^0.544.0",
     "react": "^19.1.1",
