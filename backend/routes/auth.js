@@ -120,17 +120,17 @@ router.post("/login", async (req, res) => {
   }
 });
 
-/*************** GOOGLE LOGIN SAFE ***************/
-let admin = null;
-try {
-  admin = require("firebase-admin");
+/*************** GOOGLE LOGIN (NO firebase.json) ***************/
+const admin = require("firebase-admin");
+
+if (!admin.apps.length) {
   admin.initializeApp({
-    credential: admin.credential.cert(require("../firebase.json")),
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+    }),
   });
-} catch (e) {
-  console.log(
-    "🔥 Firebase Admin NOT enabled (no key found). Google login disabled."
-  );
 }
 
 router.post("/google", async (req, res) => {
@@ -155,11 +155,11 @@ router.post("/google", async (req, res) => {
     });
 
     res.json({ token: jwtToken, user });
-  } catch {
+  } catch (err) {
+    console.log(err);
     res.status(500).json({ message: "Google login failed" });
   }
 });
-
 
 /*************** FORGOT PASSWORD ***************/
 router.post("/forgot", async (req, res) => {
