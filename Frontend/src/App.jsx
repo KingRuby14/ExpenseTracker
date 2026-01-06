@@ -16,7 +16,7 @@ export default function App() {
     <Routes>
       {/* Public route */}
       <Route path="/login" element={<Auth />} />
-
+      <Route path="/forgot" element={<ForgotPassword />} />
       {/* Protected routes */}
       <Route
         path="/"
@@ -45,7 +45,6 @@ export default function App() {
 
       {/* Any unknown path → redirect to / */}
       <Route path="*" element={<Navigate to="/" />} />
-      <Route path="/forgot" element={<ForgotPassword />} />
     </Routes>
   );
 }

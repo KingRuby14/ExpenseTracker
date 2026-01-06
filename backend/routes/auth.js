@@ -130,7 +130,7 @@ if (!admin.apps.length) {
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
       privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
     }),
-  });
+  }); 
 }
 
 router.post("/google", async (req, res) => {
@@ -173,7 +173,7 @@ router.post("/forgot", async (req, res) => {
 
     user.resetOtp = otp;
     user.resetOtpExp = Date.now() + 5 * 60 * 1000;
-    await user.save();
+    await user.save(); 
 
     await transporter.sendMail({
       to: email,
