@@ -234,28 +234,28 @@ export default function Dashboard() {
                 placeholder="Name"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full border rounded-lg p-3 mb-3 text-sm focus:ring-2 focus:ring-indigo-400 outline-none"
+                className="w-full border rounded-lg p-3 mb-3 text-sm focus:ring-2 text-blue-600 font-medium focus:ring-indigo-400 outline-none"
               />
               <input
                 type="number"
                 placeholder="Amount"
                 value={form.amount}
                 onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                className="w-full border rounded-lg p-3 mb-3 text-sm focus:ring-2 focus:ring-indigo-400 outline-none"
+                className="w-full border rounded-lg p-3 mb-3 text-sm focus:ring-2 text-blue-600 font-medium focus:ring-indigo-400 outline-none"
               />
               <input
                 type="date"
                 placeholder="Date"
                 value={form.date}
                 onChange={(e) => setForm({ ...form, date: e.target.value })}
-                className="w-full border rounded-lg p-3 mb-4 text-sm focus:ring-2 focus:ring-indigo-400 outline-none uppercase"
+                className="w-full border rounded-lg p-3 mb-4 text-sm focus:ring-2 text-blue-600 font-medium focus:ring-indigo-400 outline-none uppercase"
               />
 
               <button
                 onClick={handleAdd}
-                className="w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white py-3 text-sm font-semibold rounded-lg shadow-lg hover:opacity-90 transition flex items-center justify-center gap-2"
+                className="w-full  bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white py-3 text-sm font-semibold rounded-lg shadow-lg hover:opacity-90 transition flex items-center justify-center gap-2"
               >
-                <Plus size={16} /> Add Transaction
+                <Plus size={18} /> Add Transaction
               </button>
             </div>
 
