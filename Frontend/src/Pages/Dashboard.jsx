@@ -19,9 +19,14 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { Plus, Trash2, Wallet, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Wallet,
+  ArrowDownCircle,
+  ArrowUpCircle,
+} from "lucide-react";
 
-// === Utility: group transactions by day/week/month ===
 function buildTimeline(transactions, view = "month") {
   const map = new Map();
 
@@ -56,6 +61,8 @@ function buildTimeline(transactions, view = "month") {
 }
 
 export default function Dashboard() {
+  const today = new Date().toISOString().split("T")[0];
+
   const [summary, setSummary] = useState({
     totalIncomes: 0,
     totalExpenses: 0,
@@ -65,17 +72,25 @@ export default function Dashboard() {
   const [timeline, setTimeline] = useState([]);
   const [filterType, setFilterType] = useState("all");
   const [view, setView] = useState("day");
+
   const [form, setForm] = useState({
     type: "income",
     name: "",
     amount: "",
-    date: "",
+    date: today,
   });
 
-  // Load data on mount and every 5s to reflect external API changes
+  const [errors, setErrors] = useState({
+    name: false,
+    amount: false,
+    date: false,
+  });
+
+  const [shake, setShake] = useState(false);
+
   useEffect(() => {
     loadData();
-    const interval = setInterval(loadData, 5000); // refresh every 5s
+    const interval = setInterval(loadData, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -110,15 +125,28 @@ export default function Dashboard() {
         })),
       ];
 
-      // Sort descending by date
-      setTransactions(merged.sort((a, b) => new Date(b.date) - new Date(a.date)));
+      setTransactions(
+        merged.sort((a, b) => new Date(b.date) - new Date(a.date))
+      );
     } catch (err) {
       console.error("Error loading data:", err);
     }
   };
 
   const handleAdd = async () => {
-    if (!form.name || !form.amount || !form.date) return;
+    const newErrors = {
+      name: !form.name,
+      amount: !form.amount,
+      date: !form.date,
+    };
+
+    setErrors(newErrors);
+
+    if (newErrors.name || newErrors.amount || newErrors.date) {
+      setShake(true);
+      setTimeout(() => setShake(false), 600);
+      return;
+    }
 
     try {
       const payload = {
@@ -151,7 +179,6 @@ export default function Dashboard() {
 
       setTransactions((prev) => [newTx, ...prev]);
 
-      // Update summary locally
       setSummary((prev) => {
         let income = prev.totalIncomes;
         let expense = prev.totalExpenses;
@@ -164,7 +191,14 @@ export default function Dashboard() {
         };
       });
 
-      setForm({ type: "income", name: "", amount: "", date: "" });
+      setForm((prev) => ({
+        type: prev.type,
+        name: "",
+        amount: "",
+        date: today,
+      }));
+
+      setErrors({ name: false, amount: false, date: false });
     } catch (err) {
       console.error("Error adding transaction:", err);
     }
@@ -177,7 +211,6 @@ export default function Dashboard() {
 
       setTransactions((prev) => prev.filter((t) => t.id !== tx.id));
 
-      // Update summary locally
       setSummary((prev) => {
         let income = prev.totalIncomes;
         let expense = prev.totalExpenses;
@@ -207,10 +240,15 @@ export default function Dashboard() {
         <div className="p-4 sm:p-6 space-y-6 capitalize">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 capitalize">
             {/* Add Transaction */}
-            <div className="bg-gradient-to-tr from-purple-50 via-white to-indigo-50 shadow-lg rounded-2xl p-5 sm:p-6 capitalize">
+            <div
+              className={`bg-gradient-to-tr from-purple-50 via-white to-indigo-50 shadow-lg rounded-2xl p-5 sm:p-6 capitalize ${
+                shake ? "shake" : ""
+              }`}
+            >
               <h4 className="font-semibold text-indigo-700 text-lg mb-4 text-center">
                 Add Transaction
               </h4>
+
               <div className="flex justify-center gap-4 mb-4">
                 {["income", "expense"].map((t) => (
                   <button
@@ -231,29 +269,49 @@ export default function Dashboard() {
 
               <input
                 type="text"
-                placeholder="Name"
+                placeholder={
+                  form.type === "income" ? "Income Source" : "Expense Name"
+                }
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full border rounded-lg p-3 mb-3 text-sm focus:ring-2 text-blue-600 font-medium focus:ring-indigo-400 outline-none"
+                className={`w-full border rounded-lg p-3 mb-1 text-sm focus:ring-2 text-blue-600 font-medium outline-none ${
+                  errors.name ? "border-red-500" : "focus:ring-indigo-400"
+                }`}
               />
+              {errors.name && (
+                <p className="text-red-500 text-xs mb-2 normal-case">Please enter a name</p>
+              )}
+
               <input
                 type="number"
-                placeholder="Amount"
+                placeholder={
+                  form.type === "income" ? "Income Amount" : "Expense Amount"
+                }
                 value={form.amount}
                 onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                className="w-full border rounded-lg p-3 mb-3 text-sm focus:ring-2 text-blue-600 font-medium focus:ring-indigo-400 outline-none"
+                className={`w-full border rounded-lg p-3 mb-1 text-sm focus:ring-2 text-blue-600 font-medium outline-none ${
+                  errors.amount ? "border-red-500" : "focus:ring-indigo-400"
+                }`}
               />
+              {errors.amount && (
+                <p className="text-red-500 text-xs mb-2 normal-case">Please enter amount</p>
+              )}
+
               <input
                 type="date"
-                placeholder="Date"
                 value={form.date}
                 onChange={(e) => setForm({ ...form, date: e.target.value })}
-                className="w-full border rounded-lg p-3 mb-4 text-sm focus:ring-2 text-blue-600 font-medium focus:ring-indigo-400 outline-none uppercase"
+                className={`w-full border rounded-lg p-3 mb-2 text-sm focus:ring-2 text-blue-600 font-medium outline-none ${
+                  errors.date ? "border-red-500" : "focus:ring-indigo-400"
+                }`}
               />
+              {errors.date && (
+                <p className="text-red-500 text-xs mb-2">Please select date</p>
+              )}
 
               <button
                 onClick={handleAdd}
-                className="w-full  bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white py-3 text-sm font-semibold rounded-lg shadow-lg hover:opacity-90 transition flex items-center justify-center gap-2"
+                className="w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white py-3 text-sm font-semibold rounded-lg shadow-lg hover:opacity-90 transition flex items-center justify-center gap-2"
               >
                 <Plus size={18} /> Add Transaction
               </button>
@@ -369,11 +427,23 @@ export default function Dashboard() {
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={buildTimeline(transactions, view)}>
                   <defs>
-                    <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient
+                      id="colorIncome"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
                       <stop offset="5%" stopColor="#16a34a" stopOpacity={0.4} />
                       <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
                     </linearGradient>
-                    <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient
+                      id="colorExpense"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
                       <stop offset="5%" stopColor="#dc2626" stopOpacity={0.4} />
                       <stop offset="95%" stopColor="#dc2626" stopOpacity={0} />
                     </linearGradient>
@@ -426,12 +496,18 @@ function SummaryCard({ icon, label, value, color }) {
   };
   return (
     <div className="bg-white shadow rounded-xl p-4 flex items-center gap-3">
-      <div className={`w-10 h-10 flex items-center justify-center rounded-full ${colors[color]}`}>
+      <div
+        className={`w-10 h-10 flex items-center justify-center rounded-full ${colors[color]}`}
+      >
         {icon}
       </div>
       <div>
         <h4 className="text-xs sm:text-sm text-gray-500">{label}</h4>
-        <div className={`text-base sm:text-lg font-bold ${colors[color].split(" ")[1]}`}>
+        <div
+          className={`text-base sm:text-lg font-bold ${
+            colors[color].split(" ")[1]
+          }`}
+        >
           ₹{value ?? 0}
         </div>
       </div>

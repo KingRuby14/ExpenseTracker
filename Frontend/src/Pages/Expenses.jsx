@@ -1,9 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  getExpenses,
-  addExpense,
-  deleteExpense,
-} from "../api/api.js";
+import { getExpenses, addExpense, deleteExpense } from "../api/api.js";
 import Sidebar from "../Components/Sidebar";
 import Navbar from "../Components/Navbar";
 import {
@@ -16,26 +12,23 @@ import {
 } from "recharts";
 import { Plus, Trash2 } from "lucide-react";
 
-// === Utility: group transactions by timeframe ===
 function buildTimeline(transactions, mode) {
   const map = new Map();
 
   transactions.forEach((t) => {
     const date = new Date(t.date);
     let key;
-    if (mode === "day") {
-      key = date.toISOString().substring(0, 10); // yyyy-mm-dd
-    } else if (mode === "month") {
-      key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-    } else {
-      key = `${date.getFullYear()}`;
-    }
+    if (mode === "day") key = date.toISOString().substring(0, 10);
+    else if (mode === "month")
+      key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+        2,
+        "0"
+      )}`;
+    else key = `${date.getFullYear()}`;
 
     const sortKey = date.getTime();
 
-    if (!map.has(key)) {
-      map.set(key, { period: key, expense: 0, details: [] });
-    }
+    if (!map.has(key)) map.set(key, { period: key, expense: 0, details: [] });
     map.get(key).expense += Number(t.amount);
     map.get(key).details.push({ name: t.name, amount: t.amount });
     map.get(key).sortKey = sortKey;
@@ -44,19 +37,13 @@ function buildTimeline(transactions, mode) {
   return Array.from(map.values()).sort((a, b) => a.sortKey - b.sortKey);
 }
 
-// === Utility: download CSV ===
 function downloadCSV(transactions) {
   if (!transactions.length) return;
-
   const header = ["Name", "Amount", "Date"];
   const rows = transactions.map((tx) => [tx.name, tx.amount, tx.date]);
-
-  const csvContent =
-    [header, ...rows].map((r) => r.join(",")).join("\n");
-
+  const csvContent = [header, ...rows].map((r) => r.join(",")).join("\n");
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
-
   const link = document.createElement("a");
   link.href = url;
   link.setAttribute("download", "expense_report.csv");
@@ -66,12 +53,20 @@ function downloadCSV(transactions) {
 }
 
 export default function Expense() {
+  const today = new Date().toISOString().split("T")[0];
+
   const [summary, setSummary] = useState({ totalExpenses: 0 });
   const [transactions, setTransactions] = useState([]);
-  const [form, setForm] = useState({ name: "", amount: "", date: "" });
-  const [mode, setMode] = useState("day"); // day | month | year
+  const [form, setForm] = useState({ name: "", amount: "", date: today });
+  const [mode, setMode] = useState("day");
 
-  // Load expenses
+  const [errors, setErrors] = useState({
+    name: false,
+    amount: false,
+    date: false,
+  });
+  const [shake, setShake] = useState(false);
+
   useEffect(() => {
     loadData();
   }, []);
@@ -86,7 +81,9 @@ export default function Expense() {
         date: e.date.substring(0, 10),
       }));
 
-      setTransactions(mapped.sort((a, b) => new Date(b.date) - new Date(a.date)));
+      setTransactions(
+        mapped.sort((a, b) => new Date(b.date) - new Date(a.date))
+      );
       setSummary({
         totalExpenses: mapped.reduce((sum, tx) => sum + Number(tx.amount), 0),
       });
@@ -96,7 +93,19 @@ export default function Expense() {
   };
 
   const handleAdd = async () => {
-    if (!form.name || !form.amount || !form.date) return;
+    const newErrors = {
+      name: !form.name,
+      amount: !form.amount,
+      date: !form.date,
+    };
+
+    setErrors(newErrors);
+    if (newErrors.name || newErrors.amount || newErrors.date) {
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+      return;
+    }
+
     try {
       const res = await addExpense({
         category: form.name,
@@ -116,7 +125,8 @@ export default function Expense() {
         totalExpenses: prev.totalExpenses + Number(form.amount),
       }));
 
-      setForm({ name: "", amount: "", date: "" });
+      setForm({ name: "", amount: "", date: today });
+      setErrors({ name: false, amount: false, date: false });
     } catch (err) {
       console.error("Error adding expense:", err);
     }
@@ -130,7 +140,7 @@ export default function Expense() {
         totalExpenses: prev.totalExpenses - Number(tx.amount),
       }));
     } catch (err) {
-      console.error("Error deleting expense:", err);
+      console.error("Error delete expense:", err);
     }
   };
 
@@ -144,31 +154,60 @@ export default function Expense() {
         <div className="p-4 sm:p-6 space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Add Expense */}
-            <div className=" w-full max-h-80 bg-gradient-to-tr from-purple-50 via-white to-indigo-50 shadow-lg rounded-2xl p-5 sm:p-6">
+            <div
+              className={`w-full max-h-80 bg-gradient-to-tr from-purple-50 via-white to-indigo-50 shadow-lg rounded-2xl p-5 sm:p-6 ${
+                shake ? "shake" : ""
+              }`}
+            >
               <h4 className="font-semibold text-indigo-700 text-lg mb-4 text-center">
                 Add Expense
               </h4>
 
               <input
                 type="text"
-                placeholder="Name"
+                placeholder="Expense Name"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full border rounded-lg p-3 mb-3 text-sm focus:ring-2 focus:ring-indigo-400 outline-none"
+                className={`w-full border rounded-lg p-3 mb-1 text-sm outline-none ${
+                  errors.name
+                    ? "border-red-500"
+                    : "focus:ring-2 focus:ring-indigo-400"
+                }`}
               />
+              {errors.name && (
+                <p className="text-red-500 text-xs mb-2 normal-case">
+                  Please enter expense name
+                </p>
+              )}
+
               <input
                 type="number"
-                placeholder="Amount"
+                placeholder="Expense Amount"
                 value={form.amount}
                 onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                className="w-full border rounded-lg p-3 mb-3 text-sm focus:ring-2 focus:ring-indigo-400 outline-none"
+                className={`w-full border rounded-lg p-3 mb-1 text-sm outline-none ${
+                  errors.amount
+                    ? "border-red-500"
+                    : "focus:ring-2 focus:ring-indigo-400"
+                }`}
               />
+              {errors.amount && (
+                <p className="text-red-500 text-xs mb-2 normal-case">Please enter amount</p>
+              )}
+
               <input
                 type="date"
                 value={form.date}
                 onChange={(e) => setForm({ ...form, date: e.target.value })}
-                className="w-full border rounded-lg p-3 mb-4 text-sm focus:ring-2 focus:ring-indigo-400 outline-none"
+                className={`w-full border rounded-lg p-3 mb-2 text-sm outline-none ${
+                  errors.date
+                    ? "border-red-500"
+                    : "focus:ring-2 focus:ring-indigo-400"
+                }`}
               />
+              {errors.date && (
+                <p className="text-red-500 text-xs mb-2">Please select date</p>
+              )}
 
               <button
                 onClick={handleAdd}
@@ -192,7 +231,9 @@ export default function Expense() {
 
               <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
                 <span>Total Expense:</span>
-                <span className="font-semibold text-red-600">₹{summary.totalExpenses}</span>
+                <span className="font-semibold text-red-600">
+                  ₹{summary.totalExpenses}
+                </span>
               </div>
 
               <div className="flex-1 overflow-y-auto max-h-72 pr-2 scrollbar-hide">
@@ -267,7 +308,13 @@ export default function Expense() {
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={timeline}>
                   <defs>
-                    <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient
+                      id="colorExpense"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
                       <stop offset="5%" stopColor="#dc2626" stopOpacity={0.4} />
                       <stop offset="95%" stopColor="#dc2626" stopOpacity={0} />
                     </linearGradient>

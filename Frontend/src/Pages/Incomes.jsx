@@ -17,26 +17,20 @@ import {
 } from "recharts";
 import { Plus, Trash2 } from "lucide-react";
 
-// === Utility: group transactions by timeframe ===
 function buildTimeline(transactions, mode) {
   const map = new Map();
 
   transactions.forEach((t) => {
     const date = new Date(t.date);
     let key;
-    if (mode === "day") {
-      key = date.toISOString().substring(0, 10); // yyyy-mm-dd
-    } else if (mode === "month") {
+    if (mode === "day") key = date.toISOString().substring(0, 10);
+    else if (mode === "month")
       key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-    } else {
-      key = `${date.getFullYear()}`;
-    }
+    else key = `${date.getFullYear()}`;
 
     const sortKey = date.getTime();
 
-    if (!map.has(key)) {
-      map.set(key, { period: key, income: 0, details: [] });
-    }
+    if (!map.has(key)) map.set(key, { period: key, income: 0, details: [] });
     map.get(key).income += Number(t.amount);
     map.get(key).details.push({ name: t.source, amount: t.amount });
     map.get(key).sortKey = sortKey;
@@ -45,19 +39,13 @@ function buildTimeline(transactions, mode) {
   return Array.from(map.values()).sort((a, b) => a.sortKey - b.sortKey);
 }
 
-// === Utility: download CSV ===
 function downloadCSV(transactions) {
   if (!transactions.length) return;
-
   const header = ["Source", "Amount", "Date"];
   const rows = transactions.map((tx) => [tx.source, tx.amount, tx.date]);
-
-  const csvContent =
-    [header, ...rows].map((r) => r.join(",")).join("\n");
-
+  const csvContent = [header, ...rows].map((r) => r.join(",")).join("\n");
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
-
   const link = document.createElement("a");
   link.href = url;
   link.setAttribute("download", "income_report.csv");
@@ -67,12 +55,16 @@ function downloadCSV(transactions) {
 }
 
 export default function Income() {
+  const today = new Date().toISOString().split("T")[0];
+
   const [summary, setSummary] = useState({ totalIncomes: 0 });
   const [transactions, setTransactions] = useState([]);
-  const [form, setForm] = useState({ source: "", amount: "", date: "" });
-  const [mode, setMode] = useState("day"); // day | month | year
+  const [form, setForm] = useState({ source: "", amount: "", date: today });
+  const [mode, setMode] = useState("day");
 
-  // Load incomes
+  const [errors, setErrors] = useState({ source: false, amount: false, date: false });
+  const [shake, setShake] = useState(false);
+
   useEffect(() => {
     loadData();
   }, []);
@@ -87,7 +79,7 @@ export default function Income() {
         date: e.date.substring(0, 10),
       }));
 
-      setTransactions(mapped.sort((a, b) => new Date(b.date) - new Date(a.date)));
+      setTransactions(mapped.sort((a,b)=>new Date(b.date)-new Date(a.date)));
       setSummary({
         totalIncomes: mapped.reduce((sum, tx) => sum + Number(tx.amount), 0),
       });
@@ -97,13 +89,21 @@ export default function Income() {
   };
 
   const handleAdd = async () => {
-    if (!form.source || !form.amount || !form.date) return;
+    const newErrors = {
+      source: !form.source,
+      amount: !form.amount,
+      date: !form.date,
+    };
+
+    setErrors(newErrors);
+    if (newErrors.source || newErrors.amount || newErrors.date) {
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+      return;
+    }
+
     try {
-      const res = await addIncome({
-        source: form.source,
-        amount: form.amount,
-        date: form.date,
-      });
+      const res = await addIncome(form);
 
       const newTx = {
         id: res.data._id || Date.now(),
@@ -117,7 +117,8 @@ export default function Income() {
         totalIncomes: prev.totalIncomes + Number(form.amount),
       }));
 
-      setForm({ source: "", amount: "", date: "" });
+      setForm({ source: "", amount: "", date: today });
+      setErrors({ source: false, amount: false, date: false });
     } catch (err) {
       console.error("Error adding income:", err);
     }
@@ -144,32 +145,44 @@ export default function Income() {
         <Navbar />
         <div className="p-4 sm:p-6 space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
             {/* Add Income */}
-            <div className="w-full max-h-80 bg-gradient-to-tr from-green-50 via-white to-emerald-50 shadow-lg rounded-2xl p-5 sm:p-6">
+            <div className={`w-full max-h-80 bg-gradient-to-tr from-green-50 via-white to-emerald-50 shadow-lg rounded-2xl p-5 sm:p-6 ${shake ? "shake" : ""}`}>
               <h4 className="font-semibold text-green-700 text-lg mb-4 text-center">
                 Add Income
               </h4>
 
               <input
                 type="text"
-                placeholder="Source"
+                placeholder="Income Source"
                 value={form.source}
                 onChange={(e) => setForm({ ...form, source: e.target.value })}
-                className="w-full border rounded-lg p-3 mb-3 text-sm focus:ring-2 focus:ring-green-400 outline-none"
+                className={`w-full border rounded-lg p-3 mb-1 text-sm outline-none ${
+                  errors.source ? "border-red-500" : "focus:ring-2 focus:ring-green-400"
+                }`}
               />
+              {errors.source && <p className="text-red-500 text-xs mb-2 normal-case">Please enter income source</p>}
+
               <input
                 type="number"
-                placeholder="Amount"
+                placeholder="Income Amount"
                 value={form.amount}
                 onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                className="w-full border rounded-lg p-3 mb-3 text-sm focus:ring-2 focus:ring-green-400 outline-none"
+                className={`w-full border rounded-lg p-3 mb-1 text-sm outline-none ${
+                  errors.amount ? "border-red-500" : "focus:ring-2 focus:ring-green-400"
+                }`}
               />
+              {errors.amount && <p className="text-red-500 text-xs mb-2 normal-case">Please enter amount</p>}
+
               <input
                 type="date"
                 value={form.date}
                 onChange={(e) => setForm({ ...form, date: e.target.value })}
-                className="w-full border rounded-lg p-3 mb-4 text-sm focus:ring-2 focus:ring-green-400 outline-none"
+                className={`w-full border rounded-lg p-3 mb-2 text-sm outline-none ${
+                  errors.date ? "border-red-500" : "focus:ring-2 focus:ring-green-400"
+                }`}
               />
+              {errors.date && <p className="text-red-500 text-xs mb-2">Please select date</p>}
 
               <button
                 onClick={handleAdd}
