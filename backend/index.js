@@ -22,8 +22,7 @@ const allowedOrigins = [
   "https://expensestra.selvapandi.com",
   "https://expense-tracker-qksg.onrender.com",
   "http://localhost:5173",
-  "http://localhost:3000",
-  process.env.FRONTEND_URL,
+  "http://localhost:3000"
 ];
 
 app.use(
