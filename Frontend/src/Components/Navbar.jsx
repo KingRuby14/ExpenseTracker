@@ -1,7 +1,7 @@
 export default function Navbar({ title = "Expense Tracker" }) {
   return (
-    <header className="bg-white p-4 border-b sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
+    <header className="bg-white p-4 border-b sticky top-0 left-0 z-40">
+      <div className="max-w mx-auto flex items-center justify-between">
         {/* Left: Logo + Title */}
         <div className="flex items-center gap-2">
           <img

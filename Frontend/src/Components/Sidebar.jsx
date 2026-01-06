@@ -35,7 +35,7 @@ export default function Sidebar() {
           />
           <div className="text-center">
             <div className="font-semibold">{user?.name || "User"}</div>
-            <div className="text-sm text-gray-500">{user?.email || ""}</div>
+            <div className="text-sm text-gray-900 normal-case">{user?.email || ""}</div>
           </div>
         </div>
 
