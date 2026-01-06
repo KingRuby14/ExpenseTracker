@@ -12,7 +12,7 @@ export default function Sidebar() {
       .then((r) => setUser(r.data))
       .catch(() => setUser(null));
   }, []);
-
+ 
   const isActive = (path) =>
     location.pathname === path
       ? "bg-purple-100 text-purple-700 font-semibold"
