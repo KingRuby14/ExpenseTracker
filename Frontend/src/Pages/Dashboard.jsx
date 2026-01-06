@@ -245,6 +245,7 @@ export default function Dashboard() {
               />
               <input
                 type="date"
+                placeholder="Date"
                 value={form.date}
                 onChange={(e) => setForm({ ...form, date: e.target.value })}
                 className="w-full border rounded-lg p-3 mb-4 text-sm focus:ring-2 focus:ring-indigo-400 outline-none uppercase"
