@@ -44,9 +44,7 @@ router.post("/register", upload.single("avatar"), async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
 
     const hashed = await bcrypt.hash(password, 10);
-    const avatar = req.file
-      ? `${BASE_URL}/uploads/${req.file.filename}`
-      : null;
+    const avatar = req.file ? `${BASE_URL}/uploads/${req.file.filename}` : null;
 
     const user = await User.create({
       name,
@@ -115,8 +113,7 @@ router.post("/forgot", async (req, res) => {
   try {
     let { email } = req.body;
 
-    if (!email)
-      return res.status(400).json({ message: "Email is required" });
+    if (!email) return res.status(400).json({ message: "Email is required" });
 
     email = email.toLowerCase().trim();
     const user = await User.findOne({ email });
@@ -136,14 +133,16 @@ router.post("/forgot", async (req, res) => {
 
     transporter.sendMail(
       {
+        from: `"Expense Tracker" <${process.env.EMAIL_USER}>`,
         to: email,
-        subject: "Password Reset OTP",
+        subject: "Expense Tracker Password Reset OTP",
         html: `
-          <h2>Your Reset OTP</h2>
-          <h1>${otp}</h1>
-          <p>Valid for 10 minutes.</p>
-        `,
+      <h2>Your OTP Code</h2>
+      <h1 style="letter-spacing:3px">${otp}</h1>
+      <p>Expires in <b>10 minutes</b>.</p>
+    `,
       },
+
       (err, info) => {
         if (err) {
           console.log("❌ MAIL SEND FAILED", err);
@@ -161,8 +160,6 @@ router.post("/forgot", async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 });
-
-
 
 /**************** RESET PASSWORD *****************/
 router.post("/reset", async (req, res) => {
