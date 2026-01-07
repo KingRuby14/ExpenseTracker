@@ -1,28 +1,43 @@
-// const mongoose = require("mongoose");
+const mongoose = require("mongoose");
 
-// const UserSchema = new mongoose.Schema(
-//   {
-//     name: String,
-//     email: { type: String, unique: true },
-//     password: String,
-//     avatar: String,
-//     verified: { type: Boolean, default: false },
-//     verificationToken: String,
-//     resetOtp: String,
-//     resetOtpExp: Date,
-//   },
-//   { timestamps: true }
-// );
+const UserSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-// module.exports = mongoose.model("User", UserSchema);
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
 
-const mongoose = require('mongoose');
+    password: {
+      type: String,
+      required: true,
+    },
 
-const UserSchema = new mongoose.Schema({
-  name: { type: String, required: true, trim: true },
-  email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-  password: { type: String, required: true },
-  avatar: { type: String } // url / path to uploaded profile image
-}, { timestamps: true });
+    avatar: {
+      type: String,
+      default: null,
+    },
 
-module.exports = mongoose.model('User', UserSchema);
+    // 🔥 Needed for Forgot Password
+    resetOtp: {
+      type: String,
+      default: null,
+    },
+
+    resetOtpExp: {
+      type: Number,
+      default: null,
+    },
+  },
+  { timestamps: true }
+);
+
+module.exports = mongoose.model("User", UserSchema);
