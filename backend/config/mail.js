@@ -2,21 +2,19 @@ const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 587,              // Use TLS port (Render stable)
-  secure: false,          // MUST be false for 587
+  port: 587,
+  secure: false,
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS   // Gmail APP password only
+    pass: process.env.EMAIL_PASS
   },
   tls: {
     rejectUnauthorized: false
-  }
-});
-
-// Debug to confirm SMTP works
-transporter.verify((err, success) => {
-  if (err) console.log("❌ SMTP ERROR:", err);
-  else console.log("✅ SMTP READY");
+  },
+  connectionTimeout: 10000,   // 10 sec
+  greetingTimeout: 8000,
+  socketTimeout: 10000,
+  family: 4                    // 👉 Force IPv4 (IMPORTANT)
 });
 
 module.exports = transporter;
