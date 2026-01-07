@@ -23,7 +23,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
   "https://expensestra.selvapandi.com",     // your live frontend
-  "https://expense-tracker-qksg.onrender.com" // render backend (self-ping)
+  "https://expensetracker-app.up.railway.app" // render backend (self-ping)
 ];
 
 app.use(
