@@ -5,9 +5,9 @@ const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
-const transporter = require("../config/mail");
 const User = require("../models/User");
 const auth = require("../middleware/auth");
+const sendMail = require("../config/mail"); // ✅ RESEND MAIL FUNCTION
 
 const BASE_URL = process.env.BACKEND_URL || "http://localhost:5000";
 
@@ -108,7 +108,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
-/**************** FORGOT → SEND OTP (10 MINUTES) *****************/
+/**************** FORGOT → SEND OTP *****************/
 router.post("/forgot", async (req, res) => {
   try {
     let { email } = req.body;
@@ -131,30 +131,19 @@ router.post("/forgot", async (req, res) => {
     console.log("📨 Sending OTP to:", email);
     console.log("🔐 OTP:", otp);
 
-    transporter.sendMail(
-      {
-        from: `"Expense Tracker" <${process.env.EMAIL_USER}>`,
-        to: email,
-        subject: "Expense Tracker Password Reset OTP",
-        html: `
-      <h2>Your OTP Code</h2>
-      <h1 style="letter-spacing:3px">${otp}</h1>
-      <p>Expires in <b>10 minutes</b>.</p>
-    `,
-      },
-
-      (err, info) => {
-        if (err) {
-          console.log("❌ MAIL SEND FAILED", err);
-          return res
-            .status(500)
-            .json({ message: "Failed to send OTP", error: err.message });
-        }
-
-        console.log("✅ EMAIL SENT SUCCESSFULLY", info.response);
-        return res.json({ message: "OTP sent successfully" });
-      }
+    const sent = await sendMail(
+      email,
+      "Expense Tracker Password Reset OTP",
+      `
+        <h2>Your OTP Code</h2>
+        <h1 style="letter-spacing:3px">${otp}</h1>
+        <p>Expires in <b>10 minutes</b>.</p>
+      `
     );
+
+    if (!sent) return res.status(500).json({ message: "Failed to send OTP" });
+
+    return res.json({ message: "OTP sent successfully" });
   } catch (err) {
     console.log("❌ SERVER ERROR IN FORGOT ROUTE", err);
     return res.status(500).json({ message: "Server error" });
