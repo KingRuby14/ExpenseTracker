@@ -23,7 +23,7 @@ const sendMail = async (to, subject, html) => {
     await axios.post(
       "https://api.resend.com/emails",
       {
-        from: "Expense Tracker <onboarding@resend.dev>",
+        from: "Expense Tracker <no-reply@selvapandi.com>",
         to,
         subject,
         html
