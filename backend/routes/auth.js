@@ -119,26 +119,23 @@ router.post("/forgot", async (req, res) => {
       return res.status(400).json({ message: "Email is required" });
 
     email = email.toLowerCase().trim();
-
     const user = await User.findOne({ email });
 
-    // ❗Security best practice — don't reveal if email exists
     if (!user) {
       console.log("⚠️ Forgot request for non-existing email:", email);
       return res.json({ message: "If email exists, OTP sent" });
     }
 
     const otp = String(Math.floor(100000 + Math.random() * 900000));
-
     user.resetOtp = otp;
-    user.resetOtpExp = Date.now() + 10 * 60 * 1000; // 10 mins
+    user.resetOtpExp = Date.now() + 10 * 60 * 1000;
     await user.save();
 
     console.log("📨 Sending OTP to:", email);
     console.log("🔐 OTP:", otp);
 
-    try {
-      await transporter.sendMail({
+    transporter.sendMail(
+      {
         to: email,
         subject: "Password Reset OTP",
         html: `
@@ -146,31 +143,25 @@ router.post("/forgot", async (req, res) => {
           <h1>${otp}</h1>
           <p>Valid for 10 minutes.</p>
         `,
-      });
+      },
+      (err, info) => {
+        if (err) {
+          console.log("❌ MAIL SEND FAILED", err);
+          return res
+            .status(500)
+            .json({ message: "Failed to send OTP", error: err.message });
+        }
 
-      console.log("✅ EMAIL SENT SUCCESSFULLY");
-
-      return res.json({ message: "OTP sent successfully" });
-
-    } catch (mailError) {
-      console.log("❌ MAIL SEND FAILED =====================");
-      console.log(mailError);
-      console.log("======================================");
-
-      return res
-        .status(500)
-        .json({
-          message: "Failed to send OTP",
-          error: mailError.message
-        });
-    }
-
+        console.log("✅ EMAIL SENT SUCCESSFULLY", info.response);
+        return res.json({ message: "OTP sent successfully" });
+      }
+    );
   } catch (err) {
-    console.log("❌ SERVER ERROR IN FORGOT ROUTE");
-    console.log(err);
+    console.log("❌ SERVER ERROR IN FORGOT ROUTE", err);
     return res.status(500).json({ message: "Server error" });
   }
 });
+
 
 
 /**************** RESET PASSWORD *****************/

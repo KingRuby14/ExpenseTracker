@@ -80,8 +80,8 @@ export default function AuthCard() {
       await sendOtp(forgotEmail);
       setOtpSent(true);
       setMsg("OTP sent to your email");
-    } catch {
-      setMsg("Failed to send OTP");
+    } catch (err) {
+      setMsg(err?.response?.data?.error || "Failed to send OTP");
     }
 
     setLoading(false);
