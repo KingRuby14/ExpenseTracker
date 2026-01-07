@@ -125,7 +125,7 @@ router.post("/forgot", async (req, res) => {
     const otp = String(Math.floor(100000 + Math.random() * 900000));
 
     user.resetOtp = otp;
-    user.resetOtpExp = Date.now() + 10 * 60 * 1000; // 10 mins
+    user.resetOtpExp = Date.now() + 10 * 60 * 1000;
     await user.save();
 
     await transporter.sendMail({
@@ -140,10 +140,11 @@ router.post("/forgot", async (req, res) => {
 
     res.json({ message: "OTP sent successfully" });
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: "Server error" });
+    console.log("MAIL ERROR", err);
+    res.status(500).json({ message: "Failed to send OTP" });
   }
 });
+
 
 /**************** RESET PASSWORD *****************/
 router.post("/reset", async (req, res) => {
