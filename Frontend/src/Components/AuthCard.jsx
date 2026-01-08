@@ -126,46 +126,43 @@ export default function AuthCard() {
     }
   };
 
- // GOOGLE LOGIN (FIXED)
-const handleGoogleLogin = async () => {
-  if (!googleReady || !window.google) {
-    alert("Google is still loading. Try again.");
-    return;
-  }
+  // GOOGLE LOGIN (FIXED)
+  const handleGoogleLogin = async () => {
+    if (!googleReady || !window.google) {
+      alert("Google is still loading. Try again.");
+      return;
+    }
 
-  window.google.accounts.id.initialize({
-    client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-    callback: async (response) => {
-      try {
-        // Decode Google JWT payload
-        const userData = JSON.parse(
-          atob(response.credential.split(".")[1])
-        );
+    window.google.accounts.id.initialize({
+      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+      callback: async (response) => {
+        try {
+          // Decode Google JWT payload
+          const userData = JSON.parse(atob(response.credential.split(".")[1]));
 
-        // Send data to backend
-        const res = await googleLogin({
-          email: userData.email,
-          name: userData.name,
-          picture: userData.picture,
-        });
+          // Send data to backend
+          const res = await googleLogin({
+            email: userData.email,
+            name: userData.name,
+            picture: userData.picture,
+          });
 
-        // Save token
-        localStorage.setItem("token", res.data.token);
+          // Save token
+          localStorage.setItem("token", res.data.token);
 
-        // Redirect to home
-        navigate("/");
+          // Redirect to home
+          navigate("/");
 
-        // Ensure AuthContext reloads user
-        window.location.reload();
-      } catch (err) {
-        console.error("Google login failed:", err);
-      }
-    },
-  });
+          // Ensure AuthContext reloads user
+          window.location.reload();
+        } catch (err) {
+          console.error("Google login failed:", err);
+        }
+      },
+    });
 
-  window.google.accounts.id.prompt();
-};
-
+    window.google.accounts.id.prompt();
+  };
 
   // SEND OTP
   const handleSendOtp = async () => {
