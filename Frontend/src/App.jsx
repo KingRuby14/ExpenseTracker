@@ -4,6 +4,7 @@ import Auth from "./Pages/Auth";
 import Dashboard from "./Pages/Dashboard";
 import Expenses from "./Pages/Expenses";
 import Incomes from "./Pages/Incomes";
+import VerifyEmail from "./Pages/VerifyEmail";
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem("token");
@@ -14,8 +15,8 @@ export default function App() {
   return (
     <Routes>
       {/* Public route */}
+      <Route path="/verify/:token" element={<VerifyEmail />} />
       <Route path="/login" element={<Auth />} />
-
       {/* Protected routes */}
       <Route
         path="/"
