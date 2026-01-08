@@ -26,7 +26,9 @@ export const login = (data) => API.post("/auth/login", data);
 
 export const getProfile = () => API.get("/auth/me");
 
-//
+//export const resendVerify = (email) =>
+  API.post("/auth/resend-verify", { email });
+
 // ---------- Forgot Password ----------
 //
 

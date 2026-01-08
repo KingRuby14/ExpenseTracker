@@ -74,9 +74,9 @@ export default function AuthCard() {
       const message = err?.response?.data?.message;
 
       if (message === "Please verify your email") {
-        setError("Please verify your email");
-        setVerifyEmail(loginForm.email);
+        setError(message);
         setShowResendVerify(true);
+        setVerifyEmail(loginForm.email);
       } else {
         setError(message || "Login failed");
       }
@@ -84,17 +84,26 @@ export default function AuthCard() {
   };
 
   // 🔹 RESEND VERIFICATION EMAIL (NEW)
+  // const handleResendVerify = async () => {
+  //   setVerifyMsg("");
+
+  //   try {
+  //     await axios.post(`${import.meta.env.VITE_API_URL}/auth/resend-verify`, {
+  //       email: verifyEmail,
+  //     });
+  //     setVerifyMsg("Verification email sent. Check your inbox.");
+  //   } catch {
+  //     setVerifyMsg("Failed to resend verification email");
+  //   }
+  // };
   const handleResendVerify = async () => {
-    setVerifyMsg("");
+    if (!verifyEmail) return;
 
     try {
-      await axios.post(
-        `${import.meta.env.VITE_API_URL}/auth/resend-verify`,
-        { email: verifyEmail }
-      );
-      setVerifyMsg("Verification email sent. Check your inbox.");
+      const res = await resendVerify(verifyEmail);
+      setVerifyMsg("Verification email sent. Check inbox.");
     } catch {
-      setVerifyMsg("Failed to resend verification email");
+      setVerifyMsg("Failed to resend email.");
     }
   };
 
