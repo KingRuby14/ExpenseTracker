@@ -1,10 +1,5 @@
-import { useState, useContext, useEffect } from "react";
-import {
-  register as apiRegister,
-  sendOtp,
-  resetPassword,
-  googleLogin,
-} from "../api/api.js";
+import { useState, useContext } from "react";
+import { register as apiRegister, sendOtp, resetPassword } from "../api/api.js";
 import { Eye, EyeOff } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -12,7 +7,6 @@ import { useNavigate } from "react-router-dom";
 export default function AuthCard() {
   const [isFlipped, setIsFlipped] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
-  const [googleReady, setGoogleReady] = useState(false); // ✅ ADD
 
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
 
@@ -36,24 +30,8 @@ export default function AuthCard() {
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegPassword, setShowRegPassword] = useState(false);
 
-  const { login: contextLogin, googleLoginContext } =
-    useContext(AuthContext);
+  const { login: contextLogin } = useContext(AuthContext);
   const navigate = useNavigate();
-
-  // ✅ LOAD GOOGLE SCRIPT ONCE
-  useEffect(() => {
-    if (window.google) {
-      setGoogleReady(true);
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.defer = true;
-    script.onload = () => setGoogleReady(true);
-    document.body.appendChild(script);
-  }, []);
 
   // LOGIN
   const handleLogin = async (e) => {
@@ -64,13 +42,7 @@ export default function AuthCard() {
       await contextLogin(loginForm.email, loginForm.password);
       navigate("/");
     } catch (err) {
-      const message = err?.response?.data?.message;
-
-      if (message === "Please verify your email") {
-        setError("Please verify your email. Check inbox.");
-      } else {
-        setError(message || "Login failed");
-      }
+      setError(err?.response?.data?.message || "Login failed");
     }
   };
 
@@ -87,40 +59,11 @@ export default function AuthCard() {
       if (regForm.avatar) fd.append("avatar", regForm.avatar);
 
       await apiRegister(fd);
-      alert("Registered Successfully. Verify Email Before Login.");
+      alert("Registered Successfully");
       setIsFlipped(false);
     } catch (err) {
       setError(err?.response?.data?.message || "Register failed");
     }
-  };
-
-  // ✅ GOOGLE LOGIN (FIXED)
-  const handleGoogleLogin = async () => {
-    if (!googleReady || !window.google) {
-      alert("Google is still loading. Try again.");
-      return;
-    }
-
-    window.google.accounts.id.initialize({
-      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-      callback: async (response) => {
-        const userData = JSON.parse(
-          atob(response.credential.split(".")[1])
-        );
-
-        const res = await googleLogin({
-          email: userData.email,
-          name: userData.name,
-          picture: userData.picture,
-        });
-
-        localStorage.setItem("token", res.data.token);
-        googleLoginContext(res.data.token, res.data.user);
-        navigate("/");
-      },
-    });
-
-    window.google.accounts.id.prompt();
   };
 
   // SEND OTP
@@ -149,8 +92,15 @@ export default function AuthCard() {
     e.preventDefault();
     setMsg("");
 
-    if (!otpSent) return setMsg("Request OTP first");
-    if (newPass !== confirm) return setMsg("Passwords do not match");
+    if (!otpSent) {
+      setMsg("Request OTP first");
+      return;
+    }
+
+    if (newPass !== confirm) {
+      setMsg("Passwords do not match");
+      return;
+    }
 
     try {
       await resetPassword({
@@ -243,15 +193,6 @@ export default function AuthCard() {
                     LOGIN
                   </button>
 
-                  {/* GOOGLE BUTTON */}
-                  <button
-                    type="button"
-                    onClick={handleGoogleLogin}
-                    className="w-full bg-red-500 text-white py-3 rounded font-medium hover:bg-red-600"
-                  >
-                    Continue with Google
-                  </button>
-
                   <p
                     className="text-center text-sm mt-1 text-blue-600 cursor-pointer"
                     onClick={() => setShowForgot(true)}
@@ -324,7 +265,6 @@ export default function AuthCard() {
                       }
                       required
                     />
-
                     <button
                       type="button"
                       className="absolute right-3 top-3 text-gray-500"

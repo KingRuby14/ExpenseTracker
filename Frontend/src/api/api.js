@@ -45,9 +45,8 @@ export const resetPassword = ({ email, otp, password, confirmPassword }) =>
 
 //
 // ---------- GOOGLE LOGIN ----------
-//
-export const googleLogin = (data) =>
-  API.post("/auth/google", data);
+export const googleLogin = (token) =>
+  API.post("/auth/google", { token });
 
 
 //

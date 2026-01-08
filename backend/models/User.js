@@ -2,7 +2,11 @@ const mongoose = require("mongoose");
 
 const UserSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true, trim: true },
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
     email: {
       type: String,
@@ -22,18 +26,16 @@ const UserSchema = new mongoose.Schema(
       default: null,
     },
 
-    // Forgot password
-    resetOtp: String,
-    resetOtpExp: Number,
-
-    // Email Verification
-    isVerified: {
-      type: Boolean,
-      default: false,
+    // 🔥 Needed for Forgot Password
+    resetOtp: {
+      type: String,
+      default: null,
     },
 
-    verifyToken: String,
-    verifyTokenExp: Number,
+    resetOtpExp: {
+      type: Number,
+      default: null,
+    },
   },
   { timestamps: true }
 );
