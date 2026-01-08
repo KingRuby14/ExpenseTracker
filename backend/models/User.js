@@ -16,7 +16,6 @@ const UserSchema = new mongoose.Schema(
 
     avatar: { type: String, default: null },
 
-    // 🌍 CURRENCY (NEW)
     currency: {
       type: String,
       default: "USD",

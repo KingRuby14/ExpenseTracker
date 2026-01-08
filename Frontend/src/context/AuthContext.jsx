@@ -1,31 +1,27 @@
 import { createContext, useState, useEffect } from "react";
-import { login as apiLogin, getProfile } from "../api/api.js";
+import { login as apiLogin, getProfile } from "../api/api";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
-  useEffect(() => {
-  const checkUser = async () => {
+  const loadUser = async () => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      setUser(null);
-      return;
-    }
+    if (!token) return setUser(null);
 
     try {
       const res = await getProfile();
       setUser(res.data);
-    } catch (err) {
+    } catch {
       localStorage.removeItem("token");
       setUser(null);
     }
   };
 
-  checkUser();
-}, []);
-
+  useEffect(() => {
+    loadUser();
+  }, []);
 
   const login = async (email, password) => {
     const res = await apiLogin({ email, password });
@@ -39,7 +35,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, setUser, loadUser, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

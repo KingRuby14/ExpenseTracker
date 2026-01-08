@@ -6,13 +6,16 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const crypto = require("crypto");
+
 const User = require("../models/User");
 const auth = require("../middleware/auth");
 const sendMail = require("../config/mail");
 
 const BASE_URL = process.env.BACKEND_URL || "http://localhost:5000";
 
-/**************** MULTER *****************/
+/* =======================
+   MULTER CONFIG
+======================= */
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const dir = path.join(__dirname, "..", "uploads");
@@ -20,8 +23,7 @@ const storage = multer.diskStorage({
     cb(null, dir);
   },
   filename: function (req, file, cb) {
-    const ext = path.extname(file.originalname);
-    cb(null, `avatar_${Date.now()}${ext}`);
+    cb(null, `avatar_${Date.now()}${path.extname(file.originalname)}`);
   },
 });
 
@@ -30,13 +32,15 @@ const upload = multer({
   limits: { fileSize: 20 * 1024 * 1024 },
 });
 
-/**************** REGISTER + SEND VERIFY LINK *****************/
+/* =======================
+   REGISTER
+======================= */
 router.post("/register", upload.single("avatar"), async (req, res) => {
   try {
     let { name, email, password, currency } = req.body;
 
-    if (!name || !email || !password || !currency)
-      return res.status(400).json({ message: "Please enter all fields" });
+    if (!name || !email || !password)
+      return res.status(400).json({ message: "All fields required" });
 
     email = email.toLowerCase().trim();
 
@@ -45,9 +49,8 @@ router.post("/register", upload.single("avatar"), async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
 
     const hashed = await bcrypt.hash(password, 10);
-    const avatar = req.file
-      ? `${process.env.BACKEND_URL}/uploads/${req.file.filename}`
-      : null;
+
+    const avatar = req.file ? `${BASE_URL}/uploads/${req.file.filename}` : null;
 
     const verifyToken = crypto.randomBytes(32).toString("hex");
 
@@ -56,13 +59,12 @@ router.post("/register", upload.single("avatar"), async (req, res) => {
       email,
       password: hashed,
       avatar,
-      currency: currency || "USD", // ✅ ADD THIS LINE
+      currency: currency || "USD",
       emailVerified: false,
       verifyToken,
       verifyTokenExp: Date.now() + 24 * 60 * 60 * 1000,
     });
 
-    // ✅ FRONTEND LINK
     const link = `${process.env.CLIENT_URL}/verify/${verifyToken}`;
 
     await sendMail(
@@ -75,18 +77,19 @@ router.post("/register", upload.single("avatar"), async (req, res) => {
            style="padding:10px 20px;background:#6d28d9;color:white;border-radius:5px;text-decoration:none">
           Verify Email
         </a>
-        <p>This link expires in 24 hours</p>
       `
     );
 
-    res.json({ message: "Registered! Check your email to verify." });
+    res.json({ message: "Registered! Check email to verify." });
   } catch (err) {
-    console.log(err);
+    console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-/**************** VERIFY EMAIL *****************/
+/* =======================
+   VERIFY EMAIL
+======================= */
 router.get("/verify/:token", async (req, res) => {
   try {
     const user = await User.findOne({
@@ -94,16 +97,15 @@ router.get("/verify/:token", async (req, res) => {
       verifyTokenExp: { $gt: Date.now() },
     });
 
-    if (!user)
-      return res.status(400).send("Verification link invalid or expired");
+    if (!user) return res.status(400).send("Invalid or expired link");
 
     user.emailVerified = true;
     user.verifyToken = null;
     user.verifyTokenExp = null;
     await user.save();
 
-    res.json({ message: "Email verified successfully" });
-  } catch (err) {
+    res.json({ message: "Email verified" });
+  } catch {
     res.status(500).send("Server error");
   }
 });
@@ -168,6 +170,7 @@ router.post("/login", async (req, res) => {
         name: user.name,
         email: user.email,
         avatar: user.avatar,
+        currency: user.currency,
       },
     });
   } catch (err) {
@@ -307,7 +310,8 @@ router.post("/google", async (req, res) => {
   }
 });
 
-router.put("/profile", auth, async (req, res) => {
+/**************** UPDATE PROFILE *****************/
+router.put("/profile", auth, upload.single("avatar"), async (req, res) => {
   try {
     const { name, currency } = req.body;
 
@@ -317,16 +321,22 @@ router.put("/profile", auth, async (req, res) => {
     if (name) user.name = name;
     if (currency) user.currency = currency;
 
+    if (req.file) {
+      user.avatar = `${process.env.BACKEND_URL}/uploads/${req.file.filename}`;
+    }
+
     await user.save();
 
     res.json({
+      id: user._id,
       name: user.name,
       email: user.email,
       avatar: user.avatar,
       currency: user.currency,
     });
-  } catch {
-    res.status(500).json({ message: "Server error" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Profile update failed" });
   }
 });
 

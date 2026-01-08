@@ -5,7 +5,7 @@ import Dashboard from "./Pages/Dashboard";
 import Expenses from "./Pages/Expenses";
 import Incomes from "./Pages/Incomes";
 import VerifyEmail from "./Pages/VerifyEmail";
-
+import Settings from "./Pages/Settings";
 function PrivateRoute({ children }) {
   const token = localStorage.getItem("token");
   return token ? children : <Navigate to="/login" />;
@@ -39,6 +39,14 @@ export default function App() {
         element={
           <PrivateRoute>
             <Incomes />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <PrivateRoute>
+            <Settings />
           </PrivateRoute>
         }
       />

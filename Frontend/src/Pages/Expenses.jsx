@@ -355,6 +355,7 @@ export default function Expense() {
                   />
                 </AreaChart>
               </ResponsiveContainer>
+              <div className="py-16"></div>
             </div>
           </div>
         </div>

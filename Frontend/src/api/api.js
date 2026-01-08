@@ -11,9 +11,15 @@ const API = axios.create({
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
-  config.headers["Content-Type"] = "application/json";
+
+  // ✅ IMPORTANT: DO NOT set Content-Type for FormData
+  if (!(config.data instanceof FormData)) {
+    config.headers["Content-Type"] = "application/json";
+  }
+
   return config;
 });
+
 
 //
 // ---------- AUTH ----------
@@ -26,8 +32,10 @@ export const register = (data) =>
 export const login = (data) => API.post("/auth/login", data);
 
 export const getProfile = () => API.get("/auth/me");
+// api/api.js
 export const updateProfile = (data) =>
   API.put("/auth/profile", data);
+
 
 export const resendVerify = (email) =>
   API.post("/auth/resend-verify", { email });

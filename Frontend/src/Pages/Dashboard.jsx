@@ -434,6 +434,7 @@ export default function Dashboard() {
                 ))}
               </div>
             </div>
+            
 
             <div className="w-full h-64 sm:h-80">
               <ResponsiveContainer width="100%" height="100%">
@@ -486,6 +487,7 @@ export default function Dashboard() {
                   />
                 </AreaChart>
               </ResponsiveContainer>
+              <div className="py-16"></div>
             </div>
           </div>
         </div>

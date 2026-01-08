@@ -332,6 +332,7 @@ export default function Income() {
                   <Bar dataKey="income" fill="#16a34a" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
+              <div className="py-16"></div>
             </div>
           </div>
         </div>
