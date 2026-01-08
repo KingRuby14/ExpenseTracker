@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
     const checkUser = async () => {
       try {
         const res = await getProfile();
-        setUser(res.data);          // { id, name, email, avatar }
+        setUser(res.data);
       } catch {
         setUser(null);
       }
@@ -24,13 +24,18 @@ export const AuthProvider = ({ children }) => {
     setUser(res.data.user);
   };
 
+  const googleLoginContext = (token, profile) => {
+    localStorage.setItem("token", token);
+    setUser(profile);
+  };
+
   const logout = () => {
     localStorage.removeItem("token");
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, googleLoginContext, logout }}>
       {children}
     </AuthContext.Provider>
   );

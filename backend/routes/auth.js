@@ -5,9 +5,10 @@ const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const crypto = require("crypto");
 const User = require("../models/User");
 const auth = require("../middleware/auth");
-const sendMail = require("../config/mail"); // ✅ RESEND MAIL FUNCTION
+const sendMail = require("../config/mail");
 
 const BASE_URL = process.env.BACKEND_URL || "http://localhost:5000";
 
@@ -29,7 +30,7 @@ const upload = multer({
   limits: { fileSize: 20 * 1024 * 1024 },
 });
 
-/**************** REGISTER *****************/
+/**************** REGISTER + SEND VERIFY LINK *****************/
 router.post("/register", upload.single("avatar"), async (req, res) => {
   try {
     let { name, email, password } = req.body;
@@ -44,35 +45,100 @@ router.post("/register", upload.single("avatar"), async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
 
     const hashed = await bcrypt.hash(password, 10);
-    const avatar = req.file ? `${BASE_URL}/uploads/${req.file.filename}` : null;
+    const avatar = req.file
+      ? `${process.env.BACKEND_URL}/uploads/${req.file.filename}`
+      : null;
 
-    const user = await User.create({
+    const verifyToken = crypto.randomBytes(32).toString("hex");
+
+    await User.create({
       name,
       email,
       password: hashed,
       avatar,
+      emailVerified: false,
+      verifyToken,
+      verifyTokenExp: Date.now() + 24 * 60 * 60 * 1000, // 24h
     });
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    // ✅ FRONTEND LINK
+    const link = `${process.env.CLIENT_URL}/verify/${verifyToken}`;
 
-    res.json({
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        avatar: user.avatar,
-      },
-    });
+    await sendMail(
+      email,
+      "Verify Your Expense Tracker Account",
+      `
+        <h2>Hi ${name}</h2>
+        <p>Please verify your email</p>
+        <a href="${link}"
+           style="padding:10px 20px;background:#6d28d9;color:white;border-radius:5px;text-decoration:none">
+          Verify Email
+        </a>
+        <p>This link expires in 24 hours</p>
+      `
+    );
+
+    res.json({ message: "Registered! Check your email to verify." });
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-/**************** LOGIN *****************/
+/**************** VERIFY EMAIL *****************/
+router.get("/verify/:token", async (req, res) => {
+  try {
+    const user = await User.findOne({
+      verifyToken: req.params.token,
+      verifyTokenExp: { $gt: Date.now() },
+    });
+
+    if (!user)
+      return res.status(400).send("Verification link invalid or expired");
+
+    user.emailVerified = true;
+    user.verifyToken = null;
+    user.verifyTokenExp = null;
+    await user.save();
+
+    res.send(
+      "<h2>Email Verified Successfully 🎉</h2><p>You can close this and login now.</p>"
+    );
+  } catch (err) {
+    res.status(500).send("Server error");
+  }
+});
+
+/**************** RESEND VERIFY *****************/
+router.post("/resend-verify", async (req, res) => {
+  try {
+    let { email } = req.body;
+    if (!email) return res.status(400).json({ message: "Email required" });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.json({ message: "Email sent if account exists" });
+
+    if (user.emailVerified) return res.json({ message: "Already verified" });
+
+    user.verifyToken = crypto.randomBytes(32).toString("hex");
+    user.verifyTokenExp = Date.now() + 24 * 60 * 60 * 1000;
+    await user.save();
+
+    const link = `${BASE_URL}/api/auth/verify/${user.verifyToken}`;
+
+    await sendMail(
+      email,
+      "Verify Email",
+      `<a href="${link}">Verify Account</a>`
+    );
+
+    res.json({ message: "Verification email sent" });
+  } catch {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/**************** LOGIN (BLOCK IF NOT VERIFIED) *****************/
 router.post("/login", async (req, res) => {
   try {
     let { email, password } = req.body;
@@ -89,6 +155,9 @@ router.post("/login", async (req, res) => {
     if (!isMatch)
       return res.status(400).json({ message: "Invalid credentials" });
 
+    if (!user.emailVerified)
+      return res.status(403).json({ message: "Please verify your email" });
+
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
@@ -108,7 +177,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
-/**************** FORGOT → SEND OTP *****************/
+/**************** FORGOT → SEND OTP (UNCHANGED) *****************/
 router.post("/forgot", async (req, res) => {
   try {
     let { email } = req.body;
@@ -150,7 +219,7 @@ router.post("/forgot", async (req, res) => {
   }
 });
 
-/**************** RESET PASSWORD *****************/
+/**************** RESET PASSWORD (UNCHANGED) *****************/
 router.post("/reset", async (req, res) => {
   try {
     let { email, otp, password, confirmPassword } = req.body;
@@ -198,6 +267,44 @@ router.get("/me", auth, async (req, res) => {
     res.json(user);
   } catch {
     res.status(500).json({ message: "Server error" });
+  }
+});
+
+/**************** GOOGLE LOGIN *****************/
+router.post("/google", async (req, res) => {
+  try {
+    const { email, name, picture } = req.body;
+
+    if (!email) return res.status(400).json({ message: "No email" });
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = await User.create({
+        name,
+        email,
+        password: crypto.randomBytes(20).toString("hex"),
+        avatar: picture || null,
+        emailVerified: true,
+      });
+    }
+
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
+
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar,
+      },
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Google login failed" });
   }
 });
 
