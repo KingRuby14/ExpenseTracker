@@ -5,6 +5,7 @@ import {
   resetPassword,
   googleLogin,
 } from "../api/api.js";
+import axios from "axios";
 import { Eye, EyeOff } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -12,7 +13,7 @@ import { useNavigate } from "react-router-dom";
 export default function AuthCard() {
   const [isFlipped, setIsFlipped] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
-  const [googleReady, setGoogleReady] = useState(false); // ✅ ADD
+  const [googleReady, setGoogleReady] = useState(false);
 
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
 
@@ -33,13 +34,18 @@ export default function AuthCard() {
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // 🔹 resend verify states (NEW)
+  const [showResendVerify, setShowResendVerify] = useState(false);
+  const [verifyEmail, setVerifyEmail] = useState("");
+  const [verifyMsg, setVerifyMsg] = useState("");
+
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegPassword, setShowRegPassword] = useState(false);
 
   const { login: contextLogin, googleLoginContext } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  // ✅ LOAD GOOGLE SCRIPT ONCE
+  // LOAD GOOGLE SCRIPT
   useEffect(() => {
     if (window.google) {
       setGoogleReady(true);
@@ -58,6 +64,8 @@ export default function AuthCard() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
+    setVerifyMsg("");
+    setShowResendVerify(false);
 
     try {
       await contextLogin(loginForm.email, loginForm.password);
@@ -66,10 +74,27 @@ export default function AuthCard() {
       const message = err?.response?.data?.message;
 
       if (message === "Please verify your email") {
-        setError("Please verify your email. Check inbox.");
+        setError("Please verify your email");
+        setVerifyEmail(loginForm.email);
+        setShowResendVerify(true);
       } else {
         setError(message || "Login failed");
       }
+    }
+  };
+
+  // 🔹 RESEND VERIFICATION EMAIL (NEW)
+  const handleResendVerify = async () => {
+    setVerifyMsg("");
+
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_API_URL}/auth/resend-verify`,
+        { email: verifyEmail }
+      );
+      setVerifyMsg("Verification email sent. Check your inbox.");
+    } catch {
+      setVerifyMsg("Failed to resend verification email");
     }
   };
 
@@ -93,7 +118,7 @@ export default function AuthCard() {
     }
   };
 
-  // ✅ GOOGLE LOGIN (FIXED)
+  // GOOGLE LOGIN
   const handleGoogleLogin = async () => {
     if (!googleReady || !window.google) {
       alert("Google is still loading. Try again.");
@@ -249,6 +274,38 @@ export default function AuthCard() {
                     Continue with Google
                   </button>
 
+                  {/* 🔹 RESEND VERIFY (ONLY SHOWS WHEN EMAIL NOT VERIFIED) */}
+                  {showResendVerify && (
+                    <div className="border-t pt-3 mt-2 space-y-2">
+                      <p className="text-sm text-center text-gray-600">
+                        Didn’t receive verification email?
+                      </p>
+
+                      <input
+                        type="email"
+                        className="w-full border p-2 rounded bg-gray-50"
+                        placeholder="Enter your email"
+                        value={verifyEmail}
+                        onChange={(e) => setVerifyEmail(e.target.value)}
+                      />
+
+                      <button
+                        type="button"
+                        onClick={handleResendVerify}
+                        className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+                      >
+                        Resend Verification Email
+                      </button>
+
+                      {verifyMsg && (
+                        <p className="text-center text-sm text-green-600">
+                          {verifyMsg}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ❌ DO NOT TOUCH — FORGOT PASSWORD */}
                   <p
                     className="text-center text-sm mt-1 text-blue-600 cursor-pointer"
                     onClick={() => setShowForgot(true)}
