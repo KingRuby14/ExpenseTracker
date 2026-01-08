@@ -9,6 +9,7 @@ import axios from "axios";
 import { Eye, EyeOff } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { resendVerify } from "../api/api.js";
 
 export default function AuthCard() {
   const [isFlipped, setIsFlipped] = useState(false);
@@ -44,6 +45,15 @@ export default function AuthCard() {
 
   const { login: contextLogin, googleLoginContext } = useContext(AuthContext);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("verified") === "true") {
+      setError("");
+      setMsg("Email verified successfully. You can login now.");
+      window.history.replaceState({}, document.title, "/login");
+    }
+  }, []);
 
   // LOAD GOOGLE SCRIPT
   useEffect(() => {
@@ -84,18 +94,6 @@ export default function AuthCard() {
   };
 
   // 🔹 RESEND VERIFICATION EMAIL (NEW)
-  // const handleResendVerify = async () => {
-  //   setVerifyMsg("");
-
-  //   try {
-  //     await axios.post(`${import.meta.env.VITE_API_URL}/auth/resend-verify`, {
-  //       email: verifyEmail,
-  //     });
-  //     setVerifyMsg("Verification email sent. Check your inbox.");
-  //   } catch {
-  //     setVerifyMsg("Failed to resend verification email");
-  //   }
-  // };
   const handleResendVerify = async () => {
     if (!verifyEmail) return;
 

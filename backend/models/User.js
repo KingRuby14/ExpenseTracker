@@ -27,7 +27,7 @@ const UserSchema = new mongoose.Schema(
     resetOtpExp: Number,
 
     // Email Verification
-    isVerified: {
+    emailVerified: {
       type: Boolean,
       default: false,
     },

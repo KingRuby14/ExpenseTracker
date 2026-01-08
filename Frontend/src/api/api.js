@@ -1,8 +1,9 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL?.replace(/\/$/, "") 
-    || "http://localhost:5000/api",
+  baseURL:
+    import.meta.env.VITE_API_URL?.replace(/\/$/, "") ||
+    "http://localhost:5000/api",
   timeout: 20000, // 20s safe timeout
 });
 
@@ -25,16 +26,15 @@ export const register = (data) =>
 export const login = (data) => API.post("/auth/login", data);
 
 export const getProfile = () => API.get("/auth/me");
-
-//export const resendVerify = (email) =>
+export const resendVerify = (email) =>
   API.post("/auth/resend-verify", { email });
 
+//
 // ---------- Forgot Password ----------
 //
 
 // Send OTP
-export const sendOtp = (email) =>
-  API.post("/auth/forgot", { email });
+export const sendOtp = (email) => API.post("/auth/forgot", { email });
 
 // Reset Password
 export const resetPassword = ({ email, otp, password, confirmPassword }) =>
@@ -48,9 +48,7 @@ export const resetPassword = ({ email, otp, password, confirmPassword }) =>
 //
 // ---------- GOOGLE LOGIN ----------
 //
-export const googleLogin = (data) =>
-  API.post("/auth/google", data);
-
+export const googleLogin = (data) => API.post("/auth/google", data);
 
 //
 // ---------- EXPENSES ----------

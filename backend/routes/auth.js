@@ -101,9 +101,8 @@ router.get("/verify/:token", async (req, res) => {
     user.verifyTokenExp = null;
     await user.save();
 
-    res.send(
-      "<h2>Email Verified Successfully 🎉</h2><p>You can close this and login now.</p>"
-    );
+    res.redirect(`${process.env.CLIENT_URL}/login?verified=true`);
+
   } catch (err) {
     res.status(500).send("Server error");
   }
