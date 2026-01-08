@@ -126,43 +126,42 @@ export default function AuthCard() {
     }
   };
 
-  // GOOGLE LOGIN (FIXED)
-  const handleGoogleLogin = async () => {
-    if (!googleReady || !window.google) {
-      alert("Google is still loading. Try again.");
-      return;
-    }
+  // GOOGLE LOGIN (CORRECT & RELIABLE)
+  useEffect(() => {
+    if (!googleReady || !window.google) return;
 
     window.google.accounts.id.initialize({
       client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
       callback: async (response) => {
         try {
-          // Decode Google JWT payload
           const userData = JSON.parse(atob(response.credential.split(".")[1]));
 
-          // Send data to backend
           const res = await googleLogin({
             email: userData.email,
             name: userData.name,
             picture: userData.picture,
           });
 
-          // Save token
           localStorage.setItem("token", res.data.token);
-
-          // Redirect to home
           navigate("/");
-
-          // Ensure AuthContext reloads user
           window.location.reload();
         } catch (err) {
-          console.error("Google login failed:", err);
+          console.error("Google login failed", err);
+          alert("Google login failed");
         }
       },
     });
 
-    window.google.accounts.id.prompt();
-  };
+    // Render official Google button
+    window.google.accounts.id.renderButton(
+      document.getElementById("googleBtn"),
+      {
+        theme: "filled_blue",
+        size: "large",
+        width: "100%",
+      }
+    );
+  }, [googleReady]);
 
   // SEND OTP
   const handleSendOtp = async () => {
@@ -285,13 +284,11 @@ export default function AuthCard() {
                   </button>
 
                   {/* GOOGLE BUTTON */}
-                  <button
-                    type="button"
-                    onClick={handleGoogleLogin}
-                    className="w-full bg-red-500 text-white py-3 rounded font-medium hover:bg-red-600"
-                  >
-                    Continue with Google
-                  </button>
+                  {/* GOOGLE LOGIN */}
+                  <div
+                    id="googleBtn"
+                    className="w-full flex justify-center"
+                  ></div>
 
                   {/* 🔹 RESEND VERIFY (ONLY SHOWS WHEN EMAIL NOT VERIFIED) */}
                   {showResendVerify && (
