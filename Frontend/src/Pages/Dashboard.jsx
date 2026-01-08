@@ -1,3 +1,6 @@
+import { useContext } from "react";
+import { AuthContext } from "../context/AuthContext";
+import { formatCurrency } from "../utils/formatCurrency";
 import { useEffect, useState } from "react";
 import {
   getDashboard,
@@ -61,6 +64,8 @@ function buildTimeline(transactions, view = "month") {
 }
 
 export default function Dashboard() {
+  const { user } = useContext(AuthContext);
+  const currency = user?.currency || "USD";
   const today = new Date().toISOString().split("T")[0];
 
   const [summary, setSummary] = useState({
@@ -328,18 +333,21 @@ export default function Dashboard() {
                 label="Income"
                 value={summary.totalIncomes}
                 color="green"
+                currency={currency}
               />
               <SummaryCard
                 icon={<ArrowUpCircle size={22} />}
                 label="Expense"
                 value={summary.totalExpenses}
                 color="red"
+                currency={currency}
               />
               <SummaryCard
                 icon={<Wallet size={22} />}
                 label="Balance"
                 value={summary.balance}
                 color="indigo"
+                currency={currency}
               />
             </div>
 
@@ -392,7 +400,7 @@ export default function Dashboard() {
                               : "text-red-500"
                           }`}
                         >
-                          ₹{tx.amount}
+                          {formatCurrency(tx.amount, currency)}
                         </span>
                         <button
                           className="text-red-500 hover:text-red-700"
@@ -492,7 +500,7 @@ export default function Dashboard() {
 }
 
 // Summary card
-function SummaryCard({ icon, label, value, color }) {
+function SummaryCard({ icon, label, value, color, currency }) {
   const colors = {
     green: "bg-green-100 text-green-600",
     red: "bg-red-100 text-red-600",
@@ -512,7 +520,7 @@ function SummaryCard({ icon, label, value, color }) {
             colors[color].split(" ")[1]
           }`}
         >
-          ₹{value ?? 0}
+          {formatCurrency(value ?? 0, currency)}
         </div>
       </div>
     </div>

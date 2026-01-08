@@ -3,7 +3,9 @@ import { useEffect, useState } from "react";
 import { getProfile } from "../api/api";
 import { LayoutDashboard, Wallet, TrendingUp, LogOut } from "lucide-react";
 
+
 export default function Sidebar() {
+  
   const [user, setUser] = useState(null);
   const location = useLocation();
 

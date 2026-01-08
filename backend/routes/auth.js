@@ -33,9 +33,9 @@ const upload = multer({
 /**************** REGISTER + SEND VERIFY LINK *****************/
 router.post("/register", upload.single("avatar"), async (req, res) => {
   try {
-    let { name, email, password } = req.body;
+    let { name, email, password, currency } = req.body;
 
-    if (!name || !email || !password)
+    if (!name || !email || !password || !currency)
       return res.status(400).json({ message: "Please enter all fields" });
 
     email = email.toLowerCase().trim();
@@ -56,9 +56,10 @@ router.post("/register", upload.single("avatar"), async (req, res) => {
       email,
       password: hashed,
       avatar,
+      currency: currency || "USD", // ✅ ADD THIS LINE
       emailVerified: false,
       verifyToken,
-      verifyTokenExp: Date.now() + 24 * 60 * 60 * 1000, // 24h
+      verifyTokenExp: Date.now() + 24 * 60 * 60 * 1000,
     });
 
     // ✅ FRONTEND LINK
@@ -303,6 +304,29 @@ router.post("/google", async (req, res) => {
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: "Google login failed" });
+  }
+});
+
+router.put("/profile", auth, async (req, res) => {
+  try {
+    const { name, currency } = req.body;
+
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (name) user.name = name;
+    if (currency) user.currency = currency;
+
+    await user.save();
+
+    res.json({
+      name: user.name,
+      email: user.email,
+      avatar: user.avatar,
+      currency: user.currency,
+    });
+  } catch {
+    res.status(500).json({ message: "Server error" });
   }
 });
 

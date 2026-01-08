@@ -1,9 +1,8 @@
+import { useContext } from "react";
+import { AuthContext } from "../context/AuthContext";
+import { formatCurrency } from "../utils/formatCurrency";
 import { useEffect, useState } from "react";
-import {
-  getIncomes,
-  addIncome,
-  deleteIncome,
-} from "../api/api.js";
+import { getIncomes, addIncome, deleteIncome } from "../api/api.js";
 import Sidebar from "../Components/Sidebar";
 import Navbar from "../Components/Navbar";
 import {
@@ -25,7 +24,10 @@ function buildTimeline(transactions, mode) {
     let key;
     if (mode === "day") key = date.toISOString().substring(0, 10);
     else if (mode === "month")
-      key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+        2,
+        "0"
+      )}`;
     else key = `${date.getFullYear()}`;
 
     const sortKey = date.getTime();
@@ -55,6 +57,8 @@ function downloadCSV(transactions) {
 }
 
 export default function Income() {
+  const { user } = useContext(AuthContext);
+  const currency = user?.currency || "USD";
   const today = new Date().toISOString().split("T")[0];
 
   const [summary, setSummary] = useState({ totalIncomes: 0 });
@@ -62,7 +66,11 @@ export default function Income() {
   const [form, setForm] = useState({ source: "", amount: "", date: today });
   const [mode, setMode] = useState("day");
 
-  const [errors, setErrors] = useState({ source: false, amount: false, date: false });
+  const [errors, setErrors] = useState({
+    source: false,
+    amount: false,
+    date: false,
+  });
   const [shake, setShake] = useState(false);
 
   useEffect(() => {
@@ -79,7 +87,9 @@ export default function Income() {
         date: e.date.substring(0, 10),
       }));
 
-      setTransactions(mapped.sort((a,b)=>new Date(b.date)-new Date(a.date)));
+      setTransactions(
+        mapped.sort((a, b) => new Date(b.date) - new Date(a.date))
+      );
       setSummary({
         totalIncomes: mapped.reduce((sum, tx) => sum + Number(tx.amount), 0),
       });
@@ -145,9 +155,12 @@ export default function Income() {
         <Navbar />
         <div className="p-4 sm:p-6 space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
             {/* Add Income */}
-            <div className={`w-full max-h-80 bg-gradient-to-tr from-green-50 via-white to-emerald-50 shadow-lg rounded-2xl p-5 sm:p-6 ${shake ? "shake" : ""}`}>
+            <div
+              className={`w-full max-h-80 bg-gradient-to-tr from-green-50 via-white to-emerald-50 shadow-lg rounded-2xl p-5 sm:p-6 ${
+                shake ? "shake" : ""
+              }`}
+            >
               <h4 className="font-semibold text-green-700 text-lg mb-4 text-center">
                 Add Income
               </h4>
@@ -158,10 +171,16 @@ export default function Income() {
                 value={form.source}
                 onChange={(e) => setForm({ ...form, source: e.target.value })}
                 className={`w-full border rounded-lg p-3 mb-1 text-sm outline-none ${
-                  errors.source ? "border-red-500" : "focus:ring-2 focus:ring-green-400"
+                  errors.source
+                    ? "border-red-500"
+                    : "focus:ring-2 focus:ring-green-400"
                 }`}
               />
-              {errors.source && <p className="text-red-500 text-xs mb-2 normal-case">Please enter income source</p>}
+              {errors.source && (
+                <p className="text-red-500 text-xs mb-2 normal-case">
+                  Please enter income source
+                </p>
+              )}
 
               <input
                 type="number"
@@ -169,20 +188,30 @@ export default function Income() {
                 value={form.amount}
                 onChange={(e) => setForm({ ...form, amount: e.target.value })}
                 className={`w-full border rounded-lg p-3 mb-1 text-sm outline-none ${
-                  errors.amount ? "border-red-500" : "focus:ring-2 focus:ring-green-400"
+                  errors.amount
+                    ? "border-red-500"
+                    : "focus:ring-2 focus:ring-green-400"
                 }`}
               />
-              {errors.amount && <p className="text-red-500 text-xs mb-2 normal-case">Please enter amount</p>}
+              {errors.amount && (
+                <p className="text-red-500 text-xs mb-2 normal-case">
+                  Please enter amount
+                </p>
+              )}
 
               <input
                 type="date"
                 value={form.date}
                 onChange={(e) => setForm({ ...form, date: e.target.value })}
                 className={`w-full border rounded-lg p-3 mb-2 text-sm outline-none ${
-                  errors.date ? "border-red-500" : "focus:ring-2 focus:ring-green-400"
+                  errors.date
+                    ? "border-red-500"
+                    : "focus:ring-2 focus:ring-green-400"
                 }`}
               />
-              {errors.date && <p className="text-red-500 text-xs mb-2">Please select date</p>}
+              {errors.date && (
+                <p className="text-red-500 text-xs mb-2">Please select date</p>
+              )}
 
               <button
                 onClick={handleAdd}
@@ -206,7 +235,9 @@ export default function Income() {
 
               <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
                 <span>Total Income:</span>
-                <span className="font-semibold text-green-600">₹{summary.totalIncomes}</span>
+                <span className="font-semibold text-green-600">
+                  {formatCurrency(summary.totalIncomes, currency)}
+                </span>
               </div>
 
               <div className="flex-1 overflow-y-auto max-h-72 pr-2 scrollbar-hide">
@@ -229,7 +260,7 @@ export default function Income() {
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-bold text-green-600">
-                          ₹{tx.amount}
+                          {formatCurrency(tx.amount, currency)}
                         </span>
                         <button
                           className="text-red-500 hover:text-red-700"
@@ -261,7 +292,9 @@ export default function Income() {
                 <button
                   onClick={() => setMode("month")}
                   className={`px-3 py-1 text-xs rounded-md ${
-                    mode === "month" ? "bg-purple-600 text-white" : "bg-gray-100"
+                    mode === "month"
+                      ? "bg-purple-600 text-white"
+                      : "bg-gray-100"
                   }`}
                 >
                   Month
@@ -283,19 +316,20 @@ export default function Income() {
                   <CartesianGrid vertical={false} strokeDasharray="3 3" />
                   <XAxis dataKey="period" />
                   <YAxis />
-                  <Tooltip formatter={(value) => [`₹${value}`, "Amount"]}
+                  <Tooltip
+                    formatter={(value) => [
+                      formatCurrency(value, currency),
+                      "Amount",
+                    ]}
                     labelFormatter={(label) => {
                       const item = timeline.find((t) => t.period === label);
                       if (!item) return label;
                       return `${label}\n${item.details
                         .map((d) => `${d.name}`)
                         .join(", ")}`;
-                    }} />
-                  <Bar
-                    dataKey="income"
-                    fill="#16a34a"
-                    radius={[8, 8, 0, 0]}
+                    }}
                   />
+                  <Bar dataKey="income" fill="#16a34a" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

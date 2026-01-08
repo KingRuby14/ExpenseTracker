@@ -12,21 +12,19 @@ const UserSchema = new mongoose.Schema(
       trim: true,
     },
 
-    password: {
+    password: { type: String, required: true },
+
+    avatar: { type: String, default: null },
+
+    // 🌍 CURRENCY (NEW)
+    currency: {
       type: String,
-      required: true,
+      default: "USD",
     },
 
-    avatar: {
-      type: String,
-      default: null,
-    },
-
-    // Forgot password
     resetOtp: String,
     resetOtpExp: Number,
 
-    // Email Verification
     emailVerified: {
       type: Boolean,
       default: false,

@@ -10,11 +10,13 @@ import { Eye, EyeOff } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { resendVerify } from "../api/api.js";
+import { currencies } from "../utils/currencies.js";
 
 export default function AuthCard() {
   const [isFlipped, setIsFlipped] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
   const [googleReady, setGoogleReady] = useState(false);
+  const [currency, setCurrency] = useState("USD");
 
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
 
@@ -23,6 +25,7 @@ export default function AuthCard() {
     email: "",
     password: "",
     avatar: null,
+    currency: "USD",
   });
 
   const [forgotEmail, setForgotEmail] = useState("");
@@ -115,6 +118,8 @@ export default function AuthCard() {
       const fd = new FormData();
       fd.append("name", regForm.name);
       fd.append("email", regForm.email);
+      // fd.append("currency", regForm.currency);
+      fd.append("currency", currency); // ✅ ADD THIS
       fd.append("password", regForm.password);
       if (regForm.avatar) fd.append("avatar", regForm.avatar);
 
@@ -382,6 +387,18 @@ export default function AuthCard() {
                     }
                     required
                   />
+
+                  <select
+                    value={currency}
+                    onChange={(e) => setCurrency(e.target.value)}
+                    className="w-full border p-3 rounded bg-gray-50"
+                  >
+                    {currencies.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.symbol} {c.code} — {c.label}
+                      </option>
+                    ))}
+                  </select>
 
                   <div className="relative w-full">
                     <input

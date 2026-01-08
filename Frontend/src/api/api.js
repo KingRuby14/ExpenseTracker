@@ -26,6 +26,9 @@ export const register = (data) =>
 export const login = (data) => API.post("/auth/login", data);
 
 export const getProfile = () => API.get("/auth/me");
+export const updateProfile = (data) =>
+  API.put("/auth/profile", data);
+
 export const resendVerify = (email) =>
   API.post("/auth/resend-verify", { email });
 

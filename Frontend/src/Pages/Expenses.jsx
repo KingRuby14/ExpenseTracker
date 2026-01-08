@@ -1,3 +1,6 @@
+import { useContext } from "react";
+import { AuthContext } from "../context/AuthContext";
+import { formatCurrency } from "../utils/formatCurrency";
 import { useEffect, useState } from "react";
 import { getExpenses, addExpense, deleteExpense } from "../api/api.js";
 import Sidebar from "../Components/Sidebar";
@@ -11,6 +14,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Plus, Trash2 } from "lucide-react";
+
+
 
 function buildTimeline(transactions, mode) {
   const map = new Map();
@@ -53,6 +58,8 @@ function downloadCSV(transactions) {
 }
 
 export default function Expense() {
+  const { user } = useContext(AuthContext);
+  const currency = user?.currency || "USD";
   const today = new Date().toISOString().split("T")[0];
 
   const [summary, setSummary] = useState({ totalExpenses: 0 });
@@ -192,7 +199,9 @@ export default function Expense() {
                 }`}
               />
               {errors.amount && (
-                <p className="text-red-500 text-xs mb-2 normal-case">Please enter amount</p>
+                <p className="text-red-500 text-xs mb-2 normal-case">
+                  Please enter amount
+                </p>
               )}
 
               <input
@@ -232,7 +241,7 @@ export default function Expense() {
               <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
                 <span>Total Expense:</span>
                 <span className="font-semibold text-red-600">
-                  ₹{summary.totalExpenses}
+                  {formatCurrency(summary.totalExpenses, currency)}
                 </span>
               </div>
 
@@ -256,7 +265,7 @@ export default function Expense() {
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-bold text-red-500">
-                          ₹{tx.amount}
+                          {formatCurrency(tx.amount, currency)}
                         </span>
                         <button
                           className="text-red-500 hover:text-red-700"
@@ -322,7 +331,10 @@ export default function Expense() {
                   <XAxis dataKey="period" />
                   <YAxis />
                   <Tooltip
-                    formatter={(value) => [`₹${value}`, "Amount"]}
+                    formatter={(value) => [
+                      formatCurrency(value, currency),
+                      "Amount",
+                    ]}
                     labelFormatter={(label) => {
                       const item = timeline.find((t) => t.period === label);
                       if (!item) return label;
