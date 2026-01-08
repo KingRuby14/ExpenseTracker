@@ -7,16 +7,25 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const checkUser = async () => {
-      try {
-        const res = await getProfile();
-        setUser(res.data);          // { id, name, email, avatar }
-      } catch {
-        setUser(null);
-      }
-    };
-    checkUser();
-  }, []);
+  const checkUser = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setUser(null);
+      return;
+    }
+
+    try {
+      const res = await getProfile();
+      setUser(res.data);
+    } catch (err) {
+      localStorage.removeItem("token");
+      setUser(null);
+    }
+  };
+
+  checkUser();
+}, []);
+
 
   const login = async (email, password) => {
     const res = await apiLogin({ email, password });
