@@ -71,6 +71,9 @@ app.use("/api/reports", reportsRoutes);
 app.get("/", (req, res) =>
   res.json({ ok: true, env: process.env.NODE_ENV || "dev" })
 );
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
 
 // ---------- Start ----------
 const PORT = process.env.PORT || 5000;
